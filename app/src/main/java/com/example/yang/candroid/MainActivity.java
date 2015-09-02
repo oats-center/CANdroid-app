@@ -3,6 +3,7 @@ package com.example.yang.candroid;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 import android.view.View;
@@ -18,6 +19,7 @@ public class MainActivity extends Activity {
 
     private ToggleButton toggleButton1;
     private TextView txtview;
+    private ScrollView scrollview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +38,7 @@ public class MainActivity extends Activity {
     public void addListenerOnButton() {
 
 		toggleButton1 = (ToggleButton) findViewById(R.id.toggleButton);
+        scrollview = (ScrollView) findViewById(R.id.scrollview);
 
 		toggleButton1.setOnClickListener(new OnClickListener() {
 
@@ -53,7 +56,8 @@ public class MainActivity extends Activity {
 
                         while ((line = br.readLine()) != null) {
                             Log.w("candroid", line);
-                            txtview.setText(line);
+                            txtview.append(line + "\n");
+                            scrollview.fullScroll(ScrollView.FOCUS_DOWN);
                         }
                     } else {
                         Process p = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
@@ -66,7 +70,8 @@ public class MainActivity extends Activity {
 
                         while ((line = br.readLine()) != null) {
                             Log.w("candroid", line);
-                            txtview.setText(line);
+                            txtview.append(line + "\n");
+                            scrollview.fullScroll(ScrollView.FOCUS_DOWN);
                         }
                     }
 
