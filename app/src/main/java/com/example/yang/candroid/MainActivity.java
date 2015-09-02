@@ -3,6 +3,7 @@ package com.example.yang.candroid;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -16,6 +17,7 @@ import java.io.InputStreamReader;
 public class MainActivity extends Activity {
 
     private ToggleButton toggleButton1;
+    private TextView txtview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +49,11 @@ public class MainActivity extends Activity {
                         BufferedReader br = new BufferedReader(isr);
                         String line;
 
+                        txtview = (TextView) findViewById(R.id.terminal);
+
                         while ((line = br.readLine()) != null) {
                             Log.w("candroid", line);
+                            txtview.setText(line);
                         }
                     } else {
                         Process p = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
@@ -57,8 +62,11 @@ public class MainActivity extends Activity {
                         BufferedReader br = new BufferedReader(isr);
                         String line;
 
+                        txtview = (TextView) findViewById(R.id.terminal);
+
                         while ((line = br.readLine()) != null) {
                             Log.w("candroid", line);
+                            txtview.setText(line);
                         }
                     }
 
