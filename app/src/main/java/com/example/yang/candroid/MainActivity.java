@@ -12,6 +12,7 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -87,22 +88,38 @@ public class MainActivity extends Activity {
                     }
                 };
 
-                Thread txtviewlogThread = new Thread(txtviewlogStart);
-
                 Runnable savelog = new Runnable() {
                     @Override
                     public void run() {
-                        String filename = new SimpleDateFormat("yyyyMMddhhmm'.log'").format(new Date());
-                        FileOutputStream fos = openFileOutput(filename, MODE_WORLD_READABLE);
+                        try {
+                            InputStream is = p1.getInputStream();
+                            String filename = new SimpleDateFormat("yyyyMMddhhmm'.log'").format(new Date());
+                            OutputStream os = new FileOutputStream(new File(filename));
+                            int read = 0;
+                            byte[] bytes = new byte[1024];
+
+                            while ((read = is.read(bytes)) != -1) {
+                                os.write(bytes, 0, read);
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
                     }
-                }
+                };
+
+                Thread txtviewlogThread = new Thread(txtviewlogStart);
+                Thread savelogThread = new Thread(savelog);
 
                 try {
                     if(toggleButton1.isChecked()){
                         txtviewlogThread.start();
+                        savelogThread.start();
                     } else {
                         try {
                             txtviewlogThread.join();
+                            savelogThread.join();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
