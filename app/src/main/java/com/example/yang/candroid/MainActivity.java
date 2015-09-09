@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     private ToggleButton toggleButton1;
     private TextView txtview;
     private ScrollView scrollview;
+    private Process p1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,55 +44,68 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    public static void copyBytes(InputStream fis, OutputStream fos) throws Exception
-    {
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-        BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(fos));
-        String str = br.readLine();
-        while(str!=null)
-        {
-            wr.write(str+System.getProperty("line.separator"));
-            str = br.readLine();
-        }
-        wr.close();
-        fos.close();
-    }
-
     public void addListenerOnButton() {
 
 		toggleButton1 = (ToggleButton) findViewById(R.id.toggleButton);
         scrollview = (ScrollView) findViewById(R.id.scrollview);
 
-
 		toggleButton1.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View arg0) {
+
                 try {
-                    if(toggleButton1.isChecked()){
+                    p1 = (Process) Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-up.sh");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                Runnable txtviewlogStart = new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    InputStream is = p1.getInputStream();
+                                    InputStreamReader isr = new InputStreamReader(is);
+                                    BufferedReader br = new BufferedReader(isr);
+                                    String line;
+
+                                    txtview = (TextView) findViewById(R.id.terminal);
+
+                                    while ((line = br.readLine()) != null) {
+                                        Log.w("candroid", line);
+                                        txtview.append(line + "\n");
+                                        scrollview.fullScroll(ScrollView.FOCUS_DOWN);
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }
+                };
+
+                Thread txtviewlogThread = new Thread(txtviewlogStart);
+
+                Runnable savelog = new Runnable() {
+                    @Override
+                    public void run() {
                         String filename = new SimpleDateFormat("yyyyMMddhhmm'.log'").format(new Date());
                         FileOutputStream fos = openFileOutput(filename, MODE_WORLD_READABLE);
+                    }
+                }
 
-                        Process p = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-up.sh");
-                        InputStream is = p.getInputStream();
-                        InputStreamReader isr = new InputStreamReader(is);
-                        BufferedReader br = new BufferedReader(isr);
-                        String line;
-
+                try {
+                    if(toggleButton1.isChecked()){
+                        txtviewlogThread.start();
+                    } else {
                         try {
-                            copyBytes(is, fos);
-                        } catch (Exception e) {
+                            txtviewlogThread.join();
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-
-                        txtview = (TextView) findViewById(R.id.terminal);
-
-                        while ((line = br.readLine()) != null) {
-                            Log.w("candroid", line);
-                            txtview.append(line + "\n");
-                            scrollview.fullScroll(ScrollView.FOCUS_DOWN);
-                        }
-                    } else {
                         Process p = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
                         InputStream is = p.getInputStream();
                         InputStreamReader isr = new InputStreamReader(is);
