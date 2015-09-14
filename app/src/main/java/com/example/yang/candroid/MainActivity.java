@@ -63,22 +63,22 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.action_email_log:
-//                zipFolder(getExternalStorageDirectory() + "/log/", getExternalStorageDirectory().toString());
-//                Intent intent = new Intent(Intent.ACTION_SEND);
-//                intent.setType("text/plain");
-//                intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"email@example.com"});
-//                intent.putExtra(Intent.EXTRA_SUBJECT, "subject here");
-//                intent.putExtra(Intent.EXTRA_TEXT, "body text");
-//                File root = Environment.getExternalStorageDirectory();
-//                File file = new File(root, "log.zip");
-//                if (!file.exists() || !file.canRead()) {
-//                    Toast.makeText(this, "Attachment Error", Toast.LENGTH_SHORT).show();
-//                    finish();
-//                    return false;
-//                }
-//                Uri uri = Uri.fromFile(file);
-//                intent.putExtra(Intent.EXTRA_STREAM, uri);
-//                startActivity(Intent.createChooser(intent, "Send email..."));
+                zipFolder(getExternalStorageDirectory() + "/log/", getExternalStorageDirectory().toString());
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"email@example.com"});
+                intent.putExtra(Intent.EXTRA_SUBJECT, "subject here");
+                intent.putExtra(Intent.EXTRA_TEXT, "body text");
+                File root = Environment.getExternalStorageDirectory();
+                File file = new File(root, "log.zip");
+                if (!file.exists() || !file.canRead()) {
+                    Toast.makeText(this, "Attachment Error", Toast.LENGTH_SHORT).show();
+                    finish();
+                    return false;
+                }
+                Uri uri = Uri.fromFile(file);
+                intent.putExtra(Intent.EXTRA_STREAM, uri);
+                startActivity(Intent.createChooser(intent, "Send email..."));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -142,20 +142,21 @@ public class MainActivity extends Activity {
         } else {
             mStartLogger.cancel(true);
             mStartLogger = null;
+            TextView TxtView = (TextView) findViewById(R.id.terminal);
+            ScrollView ScrView = (ScrollView) findViewById(R.id.scrollview);
+
             Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
             InputStream is = p1.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
             String line;
 
-            TextView TxtView = (TextView) findViewById(R.id.terminal);
-            ScrollView ScrView = (ScrollView) findViewById(R.id.scrollview);
-
             while ((line = br.readLine()) != null) {
                 Log.w("candroid", line);
                 TxtView.append(line + "\n");
                 ScrView.fullScroll(ScrollView.FOCUS_DOWN);
             }
+
         }
     }
 
