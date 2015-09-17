@@ -9,7 +9,8 @@ import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ScrollView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -33,6 +34,7 @@ public class MainActivity extends Activity {
 
     private FileOutputStream mFos;
     private StartLogger mStartLogger;
+    private ArrayAdapter<String> mTerminalArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,14 +138,15 @@ public class MainActivity extends Activity {
 
             TeeInputStream tis = new TeeInputStream(p.getInputStream(),mFos);
 
+            mTerminalArray = new ArrayAdapter<String>(this, R.layout.message);
+
             mStartLogger = new StartLogger();
             mStartLogger.execute(tis);
 
         } else {
             mStartLogger.cancel(true);
             mStartLogger = null;
-            TextView TxtView = (TextView) findViewById(R.id.terminal);
-            ScrollView ScrView = (ScrollView) findViewById(R.id.scrollview);
+            ListView LstView = (ListView) findViewById(R.id.mylist);
 
             Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
             InputStream is = p1.getInputStream();
@@ -153,10 +156,9 @@ public class MainActivity extends Activity {
 
             while ((line = br.readLine()) != null) {
                 Log.w("candroid", line);
-                TxtView.append(line + "\n");
-                ScrView.fullScroll(ScrollView.FOCUS_DOWN);
+                mTerminalArray.add(line);
+                LstView.setAdapter(mTerminalArray);
             }
-
         }
     }
 
@@ -181,10 +183,9 @@ public class MainActivity extends Activity {
         }
 
         protected void onProgressUpdate(String... progress) {
-            TextView TxtView = (TextView) findViewById(R.id.terminal);
-            ScrollView ScrView = (ScrollView) findViewById(R.id.scrollview);
-            TxtView.append(progress[0] + "\n");
-            ScrView.fullScroll(ScrollView.FOCUS_DOWN);
+            ListView LstView = (ListView) findViewById(R.id.mylist);
+            mTerminalArray.add(progress[0]);
+            LstView.setAdapter(mTerminalArray);
         }
 
         protected void onPostExecute(Void Result) {
