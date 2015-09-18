@@ -8,7 +8,6 @@
     <ToggleButton
         android:layout_width="fill_parent"
         android:layout_height="324dp"
-        android:text="New ToggleButton"
         android:id="@+id/toggleButton"
         android:checked="false"
         android:layout_centerHorizontal="true"
@@ -28,8 +27,11 @@
     <ListView
         android:id="@+id/mylist"
         android:layout_below="@id/toggleButton"
+        android:divider="@null"
+        android:dividerHeight="0dp"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:transcriptMode="alwaysScroll" />
+        android:transcriptMode="alwaysScroll"
+        android:stackFromBottom="true"/>
 
 </RelativeLayout>
