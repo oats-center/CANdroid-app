@@ -1,8 +1,6 @@
 package com.example.yang.candroid;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -11,19 +9,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.FileOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.input.TeeInputStream;
 
@@ -53,7 +47,7 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
             case R.id.action_delete_log:
-                File dir = new File(Environment.getExternalStorageDirectory() + "/log/");
+                File dir = new File(Environment.getExternalStorageDirectory() + "/Log/");
                 if (dir.isDirectory())
                 {
                     String[] children = dir.list();
@@ -64,52 +58,11 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.action_email_log:
-                zipFolder(getExternalStorageDirectory() + "/log/", getExternalStorageDirectory().toString());
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType("text/plain");
-                intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"email@example.com"});
-                intent.putExtra(Intent.EXTRA_SUBJECT, "subject here");
-                intent.putExtra(Intent.EXTRA_TEXT, "body text");
-                File root = Environment.getExternalStorageDirectory();
-                File file = new File(root, "log.zip");
-                if (!file.exists() || !file.canRead()) {
-                    Toast.makeText(this, "Attachment Error", Toast.LENGTH_SHORT).show();
-                    finish();
-                    return false;
-                }
-                Uri uri = Uri.fromFile(file);
-                intent.putExtra(Intent.EXTRA_STREAM, uri);
-                startActivity(Intent.createChooser(intent, "Send email..."));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
-
-    private static void zipFolder(String inputFolderPath, String outZipPath) {
-    try {
-        FileOutputStream fos = new FileOutputStream(outZipPath);
-        ZipOutputStream zos = new ZipOutputStream(fos);
-        File srcFile = new File(inputFolderPath);
-        File[] files = srcFile.listFiles();
-        Log.w("", "Zip directory: " + srcFile.getName());
-        for (int i = 0; i < files.length; i++) {
-            Log.w("", "Adding file: " + files[i].getName());
-            byte[] buffer = new byte[1024];
-            FileInputStream fis = new FileInputStream(files[i]);
-            zos.putNextEntry(new ZipEntry(files[i].getName()));
-            int length;
-            while ((length = fis.read(buffer)) > 0) {
-                zos.write(buffer, 0, length);
-            }
-            zos.closeEntry();
-            fis.close();
-        }
-        zos.close();
-    } catch (IOException ioe) {
-        ioe.printStackTrace();
-    }
-}
 
     public void toggleOnOff(View view) throws IOException {
         ToggleButton toggleButton = (ToggleButton) view;
@@ -121,15 +74,15 @@ public class MainActivity extends Activity {
         if(toggleButton.isChecked()){
             Process p = null;
             try {
-                p = (Process) Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-up.sh");
+                p = (Process) Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-up.sh");
             } catch (Exception e){
                 e.printStackTrace();
             }
             long unixtime = System.currentTimeMillis() / 1000L;
             String timestamp = Long.toString(unixtime);
-            String filename = timestamp + ".log";
+            String filename = timestamp + ".txt";
             try {
-                mFos = new FileOutputStream(getExternalStorageDirectory() + "/log/" + filename);
+                mFos = new FileOutputStream(getExternalStorageDirectory() + "/Log/" + filename);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
@@ -147,7 +100,7 @@ public class MainActivity extends Activity {
             mStartLogger = null;
             ListView LstView = (ListView) findViewById(R.id.mylist);
 
-            Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
+            Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-down.sh");
             InputStream is = p1.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
@@ -184,6 +137,9 @@ public class MainActivity extends Activity {
         protected void onProgressUpdate(String... progress) {
             ListView LstView = (ListView) findViewById(R.id.mylist);
             mTerminalArray.add(progress[0]);
+            if (mTerminalArray.getCount() > 80) {
+                mTerminalArray.clear();
+            }
             LstView.setAdapter(mTerminalArray);
         }
 
