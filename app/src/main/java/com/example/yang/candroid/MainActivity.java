@@ -74,13 +74,13 @@ public class MainActivity extends Activity {
         if(toggleButton.isChecked()){
             Process p = null;
             try {
-                p = (Process) Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-up.sh");
+                p = (Process) Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-up.sh");
             } catch (Exception e){
                 e.printStackTrace();
             }
             long unixtime = System.currentTimeMillis() / 1000L;
             String timestamp = Long.toString(unixtime);
-            String filename = timestamp + ".log";
+            String filename = timestamp + ".txt";
             try {
                 mFos = new FileOutputStream(getExternalStorageDirectory() + "/Log/" + filename);
             } catch (Exception e) {
@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
             mStartLogger = null;
             ListView LstView = (ListView) findViewById(R.id.mylist);
 
-            Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/tmp/scripts/candroid-down.sh");
+            Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-down.sh");
             InputStream is = p1.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
@@ -138,8 +138,9 @@ public class MainActivity extends Activity {
             ListView LstView = (ListView) findViewById(R.id.mylist);
             mTerminalArray.add(progress[0]);
             if (mTerminalArray.getCount() > 80) {
-                LstView.setAdapter(mTerminalArray);
+                mTerminalArray.clear();
             }
+            LstView.setAdapter(mTerminalArray);
         }
 
         protected void onPostExecute(Void Result) {
