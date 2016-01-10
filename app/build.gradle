@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 21
     buildToolsVersion '22.0.1'
     defaultConfig {
         applicationId "com.example.yang.candroid"
@@ -23,5 +23,4 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'org.apache.directory.studio:org.apache.commons.io:2.4'
-    compile 'com.google.android.gms:play-services-drive:8.1.0'
 }

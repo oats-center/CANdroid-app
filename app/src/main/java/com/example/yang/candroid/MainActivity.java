@@ -20,24 +20,16 @@ import java.io.InputStreamReader;
 import java.io.FileOutputStream;
 
 import org.apache.commons.io.input.TeeInputStream;
+import static android.os.Environment.getExternalStorageDirectory;
+
 import org.isoblue.can.CanSocket;
 import org.isoblue.can.CanSocketJ1939;
-import org.isoblue.can.CanSocket.CanFilter;
-import org.isoblue.can.CanSocketJ1939.Filter;
-import org.isoblue.can.CanSocketJ1939.Message;
-
-import static android.os.Environment.getExternalStorageDirectory;
 
 public class MainActivity extends Activity {
 
     private FileOutputStream mFos;
     private StartLogger mStartLogger;
     private ArrayAdapter<String> mTerminalArray;
-
-    public void createCanSocket() throws IOException {
-        final CanSocketJ1939 socket = new CanSocketJ1939("");
-        socket.close();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
