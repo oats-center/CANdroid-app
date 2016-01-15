@@ -24,12 +24,13 @@ import static android.os.Environment.getExternalStorageDirectory;
 
 import org.isoblue.can.CanSocket;
 import org.isoblue.can.CanSocketJ1939;
+import org.isoblue.can.CanSocketJ1939.Message;
 
 public class MainActivity extends Activity {
-
-    private FileOutputStream mFos;
-    private StartLogger mStartLogger;
-    private ArrayAdapter<String> mTerminalArray;
+	private CanSocketJ1939 mSocket;
+	private Message mMsg;
+	private MsgLoggerTask mMsgLoggerTask;
+	private ArrayAdapter<String> mLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,15 +50,6 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
             case R.id.action_delete_log:
-                File dir = new File(Environment.getExternalStorageDirectory() + "/Log/");
-                if (dir.isDirectory())
-                {
-                    String[] children = dir.list();
-                    for (int i = 0; i < children.length; i++)
-                    {
-                        new File(dir, children[i]).delete();
-                    }
-                }
                 return true;
             case R.id.action_email_log:
                 return true;
@@ -69,64 +61,33 @@ public class MainActivity extends Activity {
     public void toggleOnOff(View view) throws IOException {
         ToggleButton toggleButton = (ToggleButton) view;
 
-        if(mFos != null) {
-            mFos.close();
-        }
-
         if(toggleButton.isChecked()){
-            Process p = null;
-            try {
-                p = (Process) Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-up.sh");
-            } catch (Exception e){
-                e.printStackTrace();
-            }
-            long unixtime = System.currentTimeMillis() / 1000L;
-            String timestamp = Long.toString(unixtime);
-            String filename = timestamp + ".txt";
-            try {
-                mFos = new FileOutputStream(getExternalStorageDirectory() + "/Log/" + filename);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
-
-            TeeInputStream tis = new TeeInputStream(p.getInputStream(),mFos);
-
-            mTerminalArray = new ArrayAdapter<String>(this, R.layout.message);
-
-            mStartLogger = new StartLogger();
-            mStartLogger.execute(tis);
-
+			mSocket = new CanSocketJ1939("can0");
+			mSocket.setPromisc();
+			mSocket.setTimestamp();
+		
+			mMsgLoggerTask = new MsgLoggerTask();
+			mMsgLoggerTask.execute(mSocket);
         } else {
-            mStartLogger.cancel(true);
-            mStartLogger = null;
-            ListView LstView = (ListView) findViewById(R.id.mylist);
-
-            Process p1 = Runtime.getRuntime().exec("su -c sh /data/local/can/candroid-down.sh");
-            InputStream is = p1.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                Log.w("candroid", line);
-                mTerminalArray.add(line);
-                LstView.setAdapter(mTerminalArray);
-            }
-        }
+			mMsgLoggerTask.cancel(true);
+			mMsgLoggerTask = null;
+        	mSocket.close();
+		}
+		
+		mLog = new ArrayAdapter<String>(this, R.layout.message);
     }
 
-    private class StartLogger extends AsyncTask<InputStream, String, Void> {
+	private class MsgLoggerTask extends AsyncTask<CanSocketJ1939, String, Void> {
         @Override
-        protected Void doInBackground(InputStream... params) {
-            InputStreamReader isr = new InputStreamReader(params[0]);
-            BufferedReader br = new BufferedReader(isr);
-            String line;
+        protected Void doInBackground(CanSocketJ1939... socket) {
             try {
-                while ((line = br.readLine()) != null) {
-                    publishProgress(line);
-                    if(isCancelled()){
-                        break;
+                while (true) {
+					if (socket[0].select(10) == 0) {
+						mMsg = socket[0].recvMsg();
+                    	publishProgress(mMsg.toString());
+					} 
+					if(isCancelled()){
+                   		break;
                     }
                 }
             } catch (Exception e) {
@@ -136,17 +97,13 @@ public class MainActivity extends Activity {
             return null;
         }
 
-        protected void onProgressUpdate(String... progress) {
-            ListView LstView = (ListView) findViewById(R.id.mylist);
-            mTerminalArray.add(progress[0]);
-            if (mTerminalArray.getCount() > 80) {
-                mTerminalArray.clear();
-            }
-            LstView.setAdapter(mTerminalArray);
+        protected void onProgressUpdate(String... msg) {
+			ListView LstView = (ListView) findViewById(R.id.mylist);
+            mLog.add(msg[0]);
         }
 
         protected void onPostExecute(Void Result) {
             // Do nothing
         }
-    }
+	}	
 }
