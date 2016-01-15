@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
 	private CanSocketJ1939 mSocket;
 	private Message mMsg;
 	private MsgLoggerTask mMsgLoggerTask;
-	private ArrayAdapter<String> mLog;
+	//private ArrayAdapter<String> mLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +65,8 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939("can0");
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
+			
+			System.out.println("socket created and its options are set");
 		
 			mMsgLoggerTask = new MsgLoggerTask();
 			mMsgLoggerTask.execute(mSocket);
@@ -74,17 +76,19 @@ public class MainActivity extends Activity {
         	mSocket.close();
 		}
 		
-		mLog = new ArrayAdapter<String>(this, R.layout.message);
+		//mLog = new ArrayAdapter<String>(this, R.layout.message);
     }
 
-	private class MsgLoggerTask extends AsyncTask<CanSocketJ1939, String, Void> {
+	private class MsgLoggerTask extends AsyncTask<CanSocketJ1939, Message, Void> {
         @Override
         protected Void doInBackground(CanSocketJ1939... socket) {
             try {
                 while (true) {
 					if (socket[0].select(10) == 0) {
 						mMsg = socket[0].recvMsg();
-                    	publishProgress(mMsg.toString());
+                    	publishProgress(mMsg);
+					} else {
+						System.out.println("no data");
 					} 
 					if(isCancelled()){
                    		break;
@@ -97,9 +101,10 @@ public class MainActivity extends Activity {
             return null;
         }
 
-        protected void onProgressUpdate(String... msg) {
-			ListView LstView = (ListView) findViewById(R.id.mylist);
-            mLog.add(msg[0]);
+        protected void onProgressUpdate(Message... msg) {
+			/* ListView LstView = (ListView) findViewById(R.id.mylist);
+			mLog.add(msg[0].toString()); */
+            msg[0].print(1);
         }
 
         protected void onPostExecute(Void Result) {
