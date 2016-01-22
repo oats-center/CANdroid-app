@@ -65,8 +65,6 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939("can0");
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-			
-			System.out.println("socket created and its options are set");
 
 			mLog = new ArrayAdapter<String>(this, R.layout.message);
 			ListView listView = (ListView) findViewById(R.id.mylist);
