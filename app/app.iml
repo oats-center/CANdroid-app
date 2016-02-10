@@ -86,8 +86,8 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 21 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="commons-io-2.4" level="project" />
-    <orderEntry type="library" exported="" name="org.apache.commons.io-2.4" level="project" />
     <orderEntry type="library" exported="" name="can-j1939-jni" level="project" />
+    <orderEntry type="library" exported="" name="org.apache.commons.io-2.4" level="project" />
+    <orderEntry type="library" exported="" name="commons-io-2.4" level="project" />
   </component>
 </module>
