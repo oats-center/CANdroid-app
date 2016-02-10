@@ -3,7 +3,6 @@ package com.example.yang.candroid;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,31 +11,37 @@ import android.widget.ListView;
 import android.widget.ToggleButton;
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileOutputStream;
 
-import org.apache.commons.io.input.TeeInputStream;
-import static android.os.Environment.getExternalStorageDirectory;
-
-import org.isoblue.can.CanSocket;
 import org.isoblue.can.CanSocketJ1939;
-import org.isoblue.can.CanSocketJ1939.Message;
+import org.isoblue.can.CanSocketJ1939.J1939Message;
 
 public class MainActivity extends Activity {
 	private CanSocketJ1939 mSocket;
-	private Message mMsg;
+	private J1939Message mMsg;
 	private MsgLoggerTask mMsgLoggerTask;
-	private ArrayAdapter<String> mLog;
+	private MsgAdapter mLog;
+	private ListView mMsgList;
+	private static final String CAN_INTERFACE = "can0";
+	private static final String TAG = "Candroid";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+		mLog = new MsgAdapter(this, 100);
+		mMsgList = (ListView) findViewById(R.id.msglist);
+		mMsgList.setAdapter(mLog);
+		setupCanSocket();
+		startTask();
     }
+
+	@Override
+	protected void onDestroy() {
+		stopTask();
+		closeCanSocket();
+		super.onDestroy();
+	}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -49,48 +54,55 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.action_delete_log:
-                return true;
-            case R.id.action_email_log:
-                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void toggleOnOff(View view) throws IOException {
-        ToggleButton toggleButton = (ToggleButton) view;
-
-        if(toggleButton.isChecked()){
-			mSocket = new CanSocketJ1939("can0");
+	private void setupCanSocket() {
+		try {
+			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-
-			mLog = new ArrayAdapter<String>(this, R.layout.message);
-			ListView listView = (ListView) findViewById(R.id.mylist);
-			listView.setAdapter(mLog);
-			mMsgLoggerTask = new MsgLoggerTask();
-			mMsgLoggerTask.execute(mSocket);
-        } else {
-			mMsgLoggerTask.cancel(true);
-			mMsgLoggerTask = null;
-        	mSocket.close();
+		} catch (IOException e) {
+			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
-    }
+	}
 
-	private class MsgLoggerTask extends AsyncTask<CanSocketJ1939, Message, Void> {
+	private void closeCanSocket() {
+		if (mSocket != null) {
+			try {
+				mSocket.close();
+			} catch (IOException e) {
+				Log.e(TAG, "cannot close socket");
+			}
+		}
+	}
+
+	private void startTask() {
+		mMsgLoggerTask = new MsgLoggerTask();
+		mMsgLoggerTask.execute(mSocket);
+	}
+
+	private void stopTask() {
+		mMsgLoggerTask.cancel(true);
+		mMsgLoggerTask = null;
+	}
+
+	private class MsgLoggerTask extends AsyncTask
+		<CanSocketJ1939, J1939Message, Void> {
         @Override
         protected Void doInBackground(CanSocketJ1939... socket) {
             try {
                 while (true) {
 					if (socket[0].select(10) == 0) {
 						mMsg = socket[0].recvMsg();
-                    	publishProgress(mMsg);
+						publishProgress(mMsg);
 					} else {
-						System.out.println("\nthere is no data");
-					} 
+						Log.i(TAG, "no J1939 msgs in past 10 seconds");
+					}
 					if(isCancelled()){
-                   		break;
+						break;
                     }
                 }
             } catch (Exception e) {
@@ -100,12 +112,12 @@ public class MainActivity extends Activity {
             return null;
         }
 
-        protected void onProgressUpdate(Message... msg) {
-			mLog.add(msg[0].toString()); 
+        protected void onProgressUpdate(J1939Message... msg) {
+			mLog.add(msg[0].toString());
         }
 
         protected void onPostExecute(Void Result) {
             // Do nothing
         }
-	}	
+	}
 }

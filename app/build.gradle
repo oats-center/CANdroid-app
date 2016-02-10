@@ -19,9 +19,20 @@ android {
 	lintOptions {
 		abortOnError false
 	}
+	packagingOptions {
+		exclude 'META-INF/LICENSE.txt'
+		exclude 'META-INF/NOTICE.txt'
+	}
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'org.apache.directory.studio:org.apache.commons.io:2.4'
+    compile 'org.apache.commons:commons-collections4:4.1'
+}
+
+task appStart(type: Exec, dependsOn: 'installDebug') {
+	commandLine 'adb', 'shell', 'am', 'start', '-n',
+	'com.example.yang.candroid/com.example.yang.candroid.MainActivity',
+	'-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHE'
 }

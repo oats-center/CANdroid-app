@@ -1,10 +1,5 @@
 <resources>
     <string name="app_name">Candroid</string>
-
-    <string name="hello_world">Hello world!</string>
-    <string name="action_delete_log">Delete All Logs</string>
-    <string name="action_email_log">Email Logs</string>
-    <string name="toggle_start">START</string>
-    <string name="toggle_stop">STOP</string>
-
+    <string name="view_old_logs">View Old Logs</string>
+    <string name="add_filters">Add Filters</string>
 </resources>

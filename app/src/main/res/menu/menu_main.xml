@@ -1,15 +1,31 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
-    <item android:id="@+id/action_email_log"
-        android:title="@string/action_email_log"
-        android:icon="@drawable/email"
+    xmlns:tools="http://schemas.android.com/tools"
+	tools:context=".MainActivity">
+
+    <item
+		android:id="@+id/add_filters"
+        android:title="@string/add_filters"
         android:orderInCategory="100"
         android:showAsAction="ifRoom" />
 
-    <item android:id="@+id/action_delete_log"
-        android:title="@string/action_delete_log"
+    <item
+		android:id="@+id/view_old_logs"
+        android:title="@string/view_old_logs"
         android:orderInCategory="100"
-        android:showAsAction="never" />
+        android:showAsAction="ifRoom" />
 
+	<item
+		android:id="@+id/save_to_sd"
+		android:title="Save to SD"
+		android:checkable="true"
+		android:orderInCategory="100"
+		android:showAsAction="never" />
+
+	<item
+		android:id="@+id/upload_to_cloud"
+		android:title="Sync to Cloud"
+		android:checkable="true"
+		android:orderInCategory="100"
+		android:showAsAction="never" />
 </menu>
