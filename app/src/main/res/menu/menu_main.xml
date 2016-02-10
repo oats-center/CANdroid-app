@@ -19,6 +19,7 @@
 		android:id="@+id/save_to_sd"
 		android:title="Save to SD"
 		android:checkable="true"
+		android:checked="true"
 		android:orderInCategory="100"
 		android:showAsAction="never" />
 

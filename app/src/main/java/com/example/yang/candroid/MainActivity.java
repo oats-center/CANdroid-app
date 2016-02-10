@@ -1,7 +1,10 @@
 package com.example.yang.candroid;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Intent;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
@@ -20,6 +23,7 @@ public class MainActivity extends Activity {
 	private MsgLoggerTask mMsgLoggerTask;
 	private MsgAdapter mLog;
 	private ListView mMsgList;
+	private boolean isCandroidServiceRunning;
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
 
@@ -31,8 +35,8 @@ public class MainActivity extends Activity {
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
 		setupCanSocket();
-		startForegroundService();
 		startTask();
+		startForegroundService();
     }
 
 	@Override
@@ -46,7 +50,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+		getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
@@ -54,10 +58,33 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+			case R.id.save_to_sd:
+				isCandroidServiceRunning =
+					isServiceRunning(CandroidService.class);
+				if (isCandroidServiceRunning && item.isChecked()) {
+					stopForegroundService();
+					item.setChecked(false);
+				} else if (!isCandroidServiceRunning && !item.isChecked()) {
+					startForegroundService();
+					item.setChecked(true);
+				}
+				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
+	private boolean isServiceRunning(Class<?> serviceClass) {
+		ActivityManager manager = (ActivityManager)
+		getSystemService(Context.ACTIVITY_SERVICE);
+		for (RunningServiceInfo service :
+			manager.getRunningServices(Integer.MAX_VALUE)) {
+			if (serviceClass.getName().equals(service.service.getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	private void setupCanSocket() {
 		try {
@@ -89,12 +116,20 @@ public class MainActivity extends Activity {
 		mMsgLoggerTask = null;
 	}
 
-	public void startForegroundService() {
+	private void startForegroundService() {
 		Intent startForegroundIntent = new Intent(
 				CandroidService.FOREGROUND_START);
 		startForegroundIntent.setClass(
 				MainActivity.this, CandroidService.class);
 		startService(startForegroundIntent);
+	}
+
+	private void stopForegroundService() {
+		Intent stopForegroundIntent = new Intent(
+				CandroidService.FOREGROUND_STOP);
+		stopForegroundIntent.setClass(
+				MainActivity.this, CandroidService.class);
+		stopService(stopForegroundIntent);
 	}
 
 	private class MsgLoggerTask extends AsyncTask
