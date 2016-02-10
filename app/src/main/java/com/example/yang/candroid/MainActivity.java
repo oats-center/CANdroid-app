@@ -1,14 +1,12 @@
 package com.example.yang.candroid;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ToggleButton;
 import android.util.Log;
 
 import java.io.IOException;
@@ -33,6 +31,7 @@ public class MainActivity extends Activity {
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
 		setupCanSocket();
+		startForegroundService();
 		startTask();
     }
 
@@ -41,6 +40,7 @@ public class MainActivity extends Activity {
 		stopTask();
 		closeCanSocket();
 		super.onDestroy();
+		Log.d(TAG, "socket closed, task stopped");
 	}
 
     @Override
@@ -87,6 +87,14 @@ public class MainActivity extends Activity {
 	private void stopTask() {
 		mMsgLoggerTask.cancel(true);
 		mMsgLoggerTask = null;
+	}
+
+	public void startForegroundService() {
+		Intent startForegroundIntent = new Intent(
+				CandroidService.FOREGROUND_START);
+		startForegroundIntent.setClass(
+				MainActivity.this, CandroidService.class);
+		startService(startForegroundIntent);
 	}
 
 	private class MsgLoggerTask extends AsyncTask
