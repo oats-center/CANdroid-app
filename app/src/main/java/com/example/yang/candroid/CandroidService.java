@@ -127,23 +127,6 @@ public class CandroidService extends Service {
 			}
 		}
 
-		public void stop() {
-			if (recvThread != null) {
-				recvThread.interrupt();
-			}
-			try {
-				if (mOsw != null) {
-					mOsw.close();
-				}
-				if (mFos != null) {
-					mFos.close();
-				}
-			} catch (IOException e) {
-				Log.e(TAG, "cannot close fd");
-			}
-			closeCanSocket();
-		}
-
 		public void run() {
 			while (!recvThread.interrupted()) {
 				try {
@@ -164,6 +147,23 @@ public class CandroidService extends Service {
 					Log.e(TAG, "cannot select on socket");
 				}
 			}
+		}
+
+		public void stop() {
+			if (recvThread != null) {
+				recvThread.interrupt();
+			}
+			try {
+				if (mOsw != null) {
+					mOsw.close();
+				}
+				if (mFos != null) {
+					mFos.close();
+				}
+			} catch (IOException e) {
+				Log.e(TAG, "cannot close fd");
+			}
+			closeCanSocket();
 		}
 	}
 
