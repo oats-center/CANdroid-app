@@ -3,6 +3,7 @@ package com.example.yang.candroid;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -22,6 +23,8 @@ public class MainActivity extends Activity {
 	private J1939Message mMsg;
 	private MsgLoggerTask mMsgLoggerTask;
 	private MsgAdapter mLog;
+	private StartupDialogFragment mDialog;
+	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private boolean isCandroidServiceRunning;
 	private static final String CAN_INTERFACE = "can0";
@@ -35,8 +38,8 @@ public class MainActivity extends Activity {
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
 		setupCanSocket();
-		startTask();
-		startForegroundService();
+		mDialog = new StartupDialogFragment();
+		mDialog.show(mFm, "Heads Up");
     }
 
 	@Override
@@ -48,7 +51,6 @@ public class MainActivity extends Activity {
 	}
 
     @Override
-
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -74,6 +76,16 @@ public class MainActivity extends Activity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+	public void onSkip() {
+		startTask();
+		isCandroidServiceRunning =
+			isServiceRunning(CandroidService.class);
+		Log.d(TAG, "isServiceRunning: " + isCandroidServiceRunning);
+		if (!isCandroidServiceRunning) {
+			startForegroundService();
+		}
+	}
 
 	private boolean isServiceRunning(Class<?> serviceClass) {
 		ActivityManager manager = (ActivityManager)
