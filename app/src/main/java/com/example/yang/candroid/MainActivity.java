@@ -79,6 +79,8 @@ public class MainActivity extends Activity {
 				}
 				return true;
 			case R.id.add_filters:
+				mWarningDialog.mWarningMsg = "Adding new filter(s) will stop " +
+					"current logging, do you wish to continue?";
 				mWarningDialog.show(mFm, "warning");
 				return true;
             default:
