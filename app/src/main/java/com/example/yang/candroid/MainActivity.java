@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.Toast;
 import android.util.Log;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class MainActivity extends Activity {
 	private static final String msgFilter = "Adding new filter(s) will stop " +
 		"the current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
+	private static final String msgStopped = "Candroid has already stopped";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,12 +78,25 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
 			case R.id.add_filters:
-				mWarningDialog.mWarningMsg = msgFilter;
-				mWarningDialog.show(mFm, "warning");
+				mIsCandroidServiceRunning =
+					isServiceRunning(CandroidService.class);
+				if (mIsCandroidServiceRunning) {
+					mWarningDialog.mWarningMsg = msgFilter;
+					mWarningDialog.show(mFm, "warning");
+				} else {
+					mFilterDialog.show(mFm, "filter");
+				}
 				return true;
 			case R.id.stop_button:
-				mWarningDialog.mWarningMsg = msgStop;
-				mWarningDialog.show(mFm, "warning");
+				mIsCandroidServiceRunning =
+					isServiceRunning(CandroidService.class);
+				if (mIsCandroidServiceRunning) {
+					mWarningDialog.mWarningMsg = msgStop;
+					mWarningDialog.show(mFm, "warning");
+				} else {
+					Toast.makeText(this, msgStopped,
+						Toast.LENGTH_SHORT).show();
+				}
 				return true;
             default:
                 return super.onOptionsItemSelected(item);

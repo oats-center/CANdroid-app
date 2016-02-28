@@ -75,7 +75,7 @@ public class FilterDialogFragment extends DialogFragment {
 										"addr: " + mAddr.getText().toString() +
 										"pgn: " + mPgn.getText().toString());
 							Toast.makeText(getActivity(), "filter added",
-											Toast.LENGTH_SHORT).show();
+								Toast.LENGTH_SHORT).show();
 						}
 					}
 				});
