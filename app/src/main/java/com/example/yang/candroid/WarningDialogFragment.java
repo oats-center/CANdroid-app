@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 public class WarningDialogFragment extends DialogFragment {
+	public String mWarningMsg = "default";
 	private static final String TAG = "WarningDialog";
 
 	@Override
@@ -31,8 +32,7 @@ public class WarningDialogFragment extends DialogFragment {
 						}
 				})
 				.setTitle("Warning")
-				.setMessage("Adding filters now will stop the current logging,"
-							+ " do you wish to continue?")
+				.setMessage(mWarningMsg)
 				.create();
 
 		return d;

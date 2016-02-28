@@ -15,13 +15,11 @@
         android:orderInCategory="100"
         android:showAsAction="ifRoom" />
 
-	<item
-		android:id="@+id/save_to_sd"
-		android:title="Save to SD"
-		android:checkable="true"
-		android:checked="true"
-		android:orderInCategory="100"
-		android:showAsAction="never" />
+    <item
+		android:id="@+id/stop_button"
+        android:title="@string/stop"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom" />
 
 	<item
 		android:id="@+id/upload_to_cloud"

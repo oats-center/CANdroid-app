@@ -20,6 +20,9 @@ public class FilterDialogFragment extends DialogFragment {
 	private TextView mAddr;
 	private TextView mPgn;
 	private static final String TAG = "FilterDialog";
+	private static final String dTitle = "Please Add Filters";
+	private static final String dMsg = "Press 'Go' without any filter will " +
+		"give you all J1939 messages";
 
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -40,7 +43,8 @@ public class FilterDialogFragment extends DialogFragment {
 							FilterDialogFragment.this.getDialog().cancel();
 						}
 				})
-				.setTitle("Please Add Filters")
+				.setTitle(dTitle)
+				.setMessage(dMsg)
 				.create();
 
 		d.setOnShowListener(new DialogInterface.OnShowListener() {
