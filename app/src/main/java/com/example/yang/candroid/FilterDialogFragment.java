@@ -70,6 +70,11 @@ public class FilterDialogFragment extends DialogFragment {
 							MainActivity.mFilterOn = true;
 							MainActivity.mFilter = new Filter(name, addr, pgn);
 							MainActivity.mFilters.add(MainActivity.mFilter);
+							MainActivity.mFilterItems.add(
+								"Filtering on"	+
+								" src name: " + mName.getText().toString() +
+								" src addr: " + mAddr.getText().toString() +
+								" pgn: " + mPgn.getText().toString());
 							Log.d(TAG, "add filter, " +
 										"name: " + mName.getText().toString() +
 										"addr: " + mAddr.getText().toString() +

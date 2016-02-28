@@ -30,9 +30,11 @@ public class MainActivity extends Activity {
 	private WarningDialogFragment mWarningDialog;
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
+	private ListView mFilterList;
 	private boolean mIsCandroidServiceRunning;
 	public static boolean mFilterOn = false;
 	public static Filter mFilter;
+	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
@@ -46,8 +48,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 		mLog = new MsgAdapter(this, 100);
+		mFilterItems = new MsgAdapter(this, 20);
 		mMsgList = (ListView) findViewById(R.id.msglist);
+		mFilterList = (ListView) findViewById(R.id.filterlist);
 		mMsgList.setAdapter(mLog);
+		mFilterList.setAdapter(mFilterItems);
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
 		mFilterDialog.show(mFm, "filter");
