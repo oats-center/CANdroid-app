@@ -23,14 +23,15 @@ import org.isoblue.can.CanSocketJ1939.Filter;
 public class MainActivity extends Activity {
 	private CanSocketJ1939 mSocket;
 	private J1939Message mMsg;
-	public static Filter mFilter;
-	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private MsgLoggerTask mMsgLoggerTask;
 	private MsgAdapter mLog;
-	private StartupDialogFragment mDialog;
+	private FilterDialogFragment mFilterDialog;
+	private WarningDialogFragment mWarningDialog;
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
-	private boolean isCandroidServiceRunning;
+	private boolean mIsCandroidServiceRunning;
+	public static Filter mFilter;
+	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
 
@@ -41,8 +42,9 @@ public class MainActivity extends Activity {
 		mLog = new MsgAdapter(this, 100);
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
-		mDialog = new StartupDialogFragment();
-		mDialog.show(mFm, "filter");
+		mFilterDialog = new FilterDialogFragment();
+		mWarningDialog = new WarningDialogFragment();
+		mFilterDialog.show(mFm, "filter");
     }
 
 	@Override
@@ -65,38 +67,42 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
 			case R.id.save_to_sd:
-				isCandroidServiceRunning =
+				mIsCandroidServiceRunning =
 					isServiceRunning(CandroidService.class);
-				if (isCandroidServiceRunning && item.isChecked()) {
+				if (mIsCandroidServiceRunning && item.isChecked()) {
 					stopForegroundService();
 					item.setChecked(false);
-				} else if (!isCandroidServiceRunning && !item.isChecked()) {
+				} else if (!mIsCandroidServiceRunning && !item.isChecked()) {
 					startForegroundService();
 					item.setChecked(true);
 				}
 				return true;
 			case R.id.add_filters:
-				stopTask();
-				closeCanSocket();
-				Log.d(TAG, "socket closed, task stopped");
-				if(isCandroidServiceRunning) {
-					stopForegroundService();
-				}
-				mDialog.show(mFm, "filter");
+				mWarningDialog.show(mFm, "warning");
 				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-	/* callback function for start the logger */
+	/* callback for adding new filters */
+	public void onAddNewFilter() {
+		stopTask();
+		closeCanSocket();
+		if (mIsCandroidServiceRunning) {
+			stopForegroundService();
+		}
+		mFilterDialog.show(mFm, "filter");
+	}
+
+	/* callback for starting the logger */
 	public void onGo() {
 		setupCanSocket();
 		startTask();
-		isCandroidServiceRunning =
+		mIsCandroidServiceRunning =
 			isServiceRunning(CandroidService.class);
-		Log.d(TAG, "isServiceRunning: " + isCandroidServiceRunning);
-		if (!isCandroidServiceRunning) {
+		Log.d(TAG, "isServiceRunning: " + mIsCandroidServiceRunning);
+		if (!mIsCandroidServiceRunning) {
 			startForegroundService();
 		}
 	}
