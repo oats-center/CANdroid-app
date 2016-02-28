@@ -25,6 +25,11 @@ public class MsgAdapter extends BaseAdapter {
 		notifyDataSetChanged();
 	}
 
+	public void clear() {
+		msgQueue.clear();
+		notifyDataSetChanged();
+	}
+
 	public void addArray(String[] msg) {
 		int i;
 		for (i = 0; i < msg.length; i++) {

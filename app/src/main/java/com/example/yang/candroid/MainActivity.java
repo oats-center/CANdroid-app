@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
@@ -117,6 +118,7 @@ public class MainActivity extends Activity {
 		if (mIsCandroidServiceRunning) {
 			stopForegroundService();
 		}
+		mFilterItems.clear();
 		mFilterDialog.show(mFm, "filter");
 	}
 
