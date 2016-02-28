@@ -35,6 +35,9 @@ public class MainActivity extends Activity {
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
+	private static final String msgFilter = "Adding new filter(s) will stop " +
+		"the current logging, do you wish to continue?";
+	private static final String msgStop = "Stop logging and Candroid Service?";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +49,11 @@ public class MainActivity extends Activity {
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
 		mFilterDialog.show(mFm, "filter");
+		mIsCandroidServiceRunning =
+			isServiceRunning(CandroidService.class);
+		if (!mIsCandroidServiceRunning) {
+			startForegroundService();
+		}
     }
 
 	@Override
@@ -67,20 +75,12 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-			case R.id.save_to_sd:
-				mIsCandroidServiceRunning =
-					isServiceRunning(CandroidService.class);
-				if (mIsCandroidServiceRunning && item.isChecked()) {
-					stopForegroundService();
-					item.setChecked(false);
-				} else if (!mIsCandroidServiceRunning && !item.isChecked()) {
-					startForegroundService();
-					item.setChecked(true);
-				}
-				return true;
 			case R.id.add_filters:
-				mWarningDialog.mWarningMsg = "Adding new filter(s) will stop " +
-					"current logging, do you wish to continue?";
+				mWarningDialog.mWarningMsg = msgFilter;
+				mWarningDialog.show(mFm, "warning");
+				return true;
+			case R.id.stop_button:
+				mWarningDialog.mWarningMsg = msgStop;
 				mWarningDialog.show(mFm, "warning");
 				return true;
             default:
