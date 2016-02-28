@@ -18,10 +18,10 @@ import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
 
 public class CandroidService extends Service {
+	public static final String FOREGROUND_STOP =
+			"com.example.yang.candroid.CandroidService.FOREGROUND.stop";
 	public static final String FOREGROUND_START =
 	"com.example.yang.candroid.CandroidService.FOREGROUND.start";
-	public static final String FOREGROUND_STOP =
-	"com.example.yang.candroid.CandroidService.FOREGROUND.stop";
 	public static final int NOTIFICATION_ID = 101;
 	private static final String TAG = "CandroidService";
 	private static final String CAN_INTERFACE = "can0";

@@ -3,6 +3,7 @@ package com.example.yang.candroid;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -13,17 +14,25 @@ import android.widget.ListView;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
+import org.isoblue.can.CanSocketJ1939.Filter;
 
 public class MainActivity extends Activity {
 	private CanSocketJ1939 mSocket;
 	private J1939Message mMsg;
 	private MsgLoggerTask mMsgLoggerTask;
 	private MsgAdapter mLog;
+	private FilterDialogFragment mFilterDialog;
+	private WarningDialogFragment mWarningDialog;
+	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
-	private boolean isCandroidServiceRunning;
+	private boolean mIsCandroidServiceRunning;
+	public static boolean mFilterOn = false;
+	public static Filter mFilter;
+	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
 
@@ -34,9 +43,9 @@ public class MainActivity extends Activity {
 		mLog = new MsgAdapter(this, 100);
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
-		setupCanSocket();
-		startTask();
-		startForegroundService();
+		mFilterDialog = new FilterDialogFragment();
+		mWarningDialog = new WarningDialogFragment();
+		mFilterDialog.show(mFm, "filter");
     }
 
 	@Override
@@ -48,7 +57,6 @@ public class MainActivity extends Activity {
 	}
 
     @Override
-
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -60,20 +68,47 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
 			case R.id.save_to_sd:
-				isCandroidServiceRunning =
+				mIsCandroidServiceRunning =
 					isServiceRunning(CandroidService.class);
-				if (isCandroidServiceRunning && item.isChecked()) {
+				if (mIsCandroidServiceRunning && item.isChecked()) {
 					stopForegroundService();
 					item.setChecked(false);
-				} else if (!isCandroidServiceRunning && !item.isChecked()) {
+				} else if (!mIsCandroidServiceRunning && !item.isChecked()) {
 					startForegroundService();
 					item.setChecked(true);
 				}
+				return true;
+			case R.id.add_filters:
+				mWarningDialog.show(mFm, "warning");
 				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
+	/* callback for adding new filters */
+	public void onAddNewFilter() {
+		stopTask();
+		closeCanSocket();
+		mIsCandroidServiceRunning =
+			isServiceRunning(CandroidService.class);
+		if (mIsCandroidServiceRunning) {
+			stopForegroundService();
+		}
+		mFilterDialog.show(mFm, "filter");
+	}
+
+	/* callback for starting the logger */
+	public void onGo() {
+		setupCanSocket();
+		startTask();
+		mIsCandroidServiceRunning =
+			isServiceRunning(CandroidService.class);
+		Log.d(TAG, "isServiceRunning: " + mIsCandroidServiceRunning);
+		if (!mIsCandroidServiceRunning) {
+			startForegroundService();
+		}
+	}
 
 	private boolean isServiceRunning(Class<?> serviceClass) {
 		ActivityManager manager = (ActivityManager)
@@ -92,6 +127,9 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
+			if (mFilterOn) {
+				mSocket.setfilter(mFilters);
+			}
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
