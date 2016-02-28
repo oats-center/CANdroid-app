@@ -5,7 +5,17 @@
     android:layout_height="wrap_content">
 
 	<EditText
-        android:id="@+id/addr"
+        android:id="@+id/filter_name"
+        android:inputType="text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginBottom="4dp"
+        android:hint="Name" />
+	<EditText
+        android:id="@+id/filter_addr"
         android:inputType="text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,7 +25,7 @@
         android:layout_marginBottom="4dp"
         android:hint="Address" />
     <EditText
-        android:id="@+id/pgn"
+        android:id="@+id/filter_pgn"
         android:inputType="text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -14,13 +14,17 @@ import android.widget.ListView;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
+import org.isoblue.can.CanSocketJ1939.Filter;
 
 public class MainActivity extends Activity {
 	private CanSocketJ1939 mSocket;
 	private J1939Message mMsg;
+	public static Filter mFilter;
+	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private MsgLoggerTask mMsgLoggerTask;
 	private MsgAdapter mLog;
 	private StartupDialogFragment mDialog;
@@ -37,9 +41,8 @@ public class MainActivity extends Activity {
 		mLog = new MsgAdapter(this, 100);
 		mMsgList = (ListView) findViewById(R.id.msglist);
 		mMsgList.setAdapter(mLog);
-		setupCanSocket();
 		mDialog = new StartupDialogFragment();
-		mDialog.show(mFm, "Heads Up");
+		mDialog.show(mFm, "filter");
     }
 
 	@Override
@@ -72,12 +75,23 @@ public class MainActivity extends Activity {
 					item.setChecked(true);
 				}
 				return true;
+			case R.id.add_filters:
+				stopTask();
+				closeCanSocket();
+				Log.d(TAG, "socket closed, task stopped");
+				if(isCandroidServiceRunning) {
+					stopForegroundService();
+				}
+				mDialog.show(mFm, "filter");
+				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-	public void onSkip() {
+	/* callback function for start the logger */
+	public void onGo() {
+		setupCanSocket();
 		startTask();
 		isCandroidServiceRunning =
 			isServiceRunning(CandroidService.class);
@@ -104,6 +118,7 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
+			mSocket.setfilter(mFilters);
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
