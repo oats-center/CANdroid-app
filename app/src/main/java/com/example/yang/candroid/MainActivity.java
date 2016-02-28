@@ -30,6 +30,7 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private boolean mIsCandroidServiceRunning;
+	public static boolean mFilterOn = false;
 	public static Filter mFilter;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
@@ -124,7 +125,9 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-			mSocket.setfilter(mFilters);
+			if (mFilterOn) {
+				mSocket.setfilter(mFilters);
+			}
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
