@@ -90,6 +90,8 @@ public class MainActivity extends Activity {
 	public void onAddNewFilter() {
 		stopTask();
 		closeCanSocket();
+		mIsCandroidServiceRunning =
+			isServiceRunning(CandroidService.class);
 		if (mIsCandroidServiceRunning) {
 			stopForegroundService();
 		}
