@@ -10,10 +10,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
+import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private ListView mFilterList;
+	private ToggleButton mButton;
 	private boolean mIsCandroidServiceRunning;
 	public static boolean mFilterOn = false;
 	public static Filter mFilter;
@@ -42,7 +45,6 @@ public class MainActivity extends Activity {
 	private static final String msgFilter = "Adding new filter(s) will stop " +
 		"the current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
-	private static final String msgStopped = "Candroid has already stopped";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +58,6 @@ public class MainActivity extends Activity {
 		mFilterList.setAdapter(mFilterItems);
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
-		mFilterDialog.show(mFm, "filter");
-		mIsCandroidServiceRunning =
-			isServiceRunning(CandroidService.class);
-		if (!mIsCandroidServiceRunning) {
-			startForegroundService();
-		}
     }
 
 	@Override
@@ -93,24 +89,37 @@ public class MainActivity extends Activity {
 					mFilterDialog.show(mFm, "filter");
 				}
 				return true;
-			case R.id.stop_button:
-				mIsCandroidServiceRunning =
-					isServiceRunning(CandroidService.class);
-				if (mIsCandroidServiceRunning) {
-					mWarningDialog.mWarningMsg = msgStop;
-					mWarningDialog.show(mFm, "warning");
-				} else {
-					Toast.makeText(this, msgStopped,
-						Toast.LENGTH_SHORT).show();
-				}
-				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+	/* callback for toggleButton */
+	public void toggleListener(View view) throws IOException {
+		ToggleButton b = (ToggleButton) view;
+		if (b.isChecked()) {
+			onGo();
+		} else {
+			mIsCandroidServiceRunning =
+				isServiceRunning(CandroidService.class);
+			if (mIsCandroidServiceRunning) {
+				mWarningDialog.mWarningMsg = msgStop;
+				mWarningDialog.show(mFm, "warning");
+			}
+		}
+	}
+
 	/* callback for adding new filters */
 	public void onAddNewFilter() {
+		onStreamStop();
+		mFilterItems.clear();
+		mFilterDialog.show(mFm, "filter");
+	}
+
+	/* callback for stop everything */
+	public void onStreamStop() {
+		ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
+		b.setChecked(false);
 		stopTask();
 		closeCanSocket();
 		mIsCandroidServiceRunning =
@@ -118,8 +127,7 @@ public class MainActivity extends Activity {
 		if (mIsCandroidServiceRunning) {
 			stopForegroundService();
 		}
-		mFilterItems.clear();
-		mFilterDialog.show(mFm, "filter");
+
 	}
 
 	/* callback for starting the logger */

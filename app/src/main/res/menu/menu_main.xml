@@ -15,12 +15,6 @@
         android:orderInCategory="100"
         android:showAsAction="ifRoom" />
 
-    <item
-		android:id="@+id/stop_button"
-        android:title="@string/stop"
-        android:orderInCategory="100"
-        android:showAsAction="ifRoom" />
-
 	<item
 		android:id="@+id/upload_to_cloud"
 		android:title="Sync to Cloud"

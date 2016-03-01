@@ -47,4 +47,15 @@
         android:id="@+id/streamTitle"
         android:layout_below="@+id/filterlist"
         android:layout_alignParentStart="true" />
+
+    <ToggleButton
+        android:layout_height="wrap_content"
+        android:id="@+id/streamToggle"
+		android:checked="false"
+		android:layout_width="100dp"
+		android:onClick="toggleListener"
+		android:textOff="Start"
+		android:textOn="Stop"
+        android:layout_below="@+id/filterlist"
+        android:layout_alignEnd="@+id/filterlist" />
 </RelativeLayout>

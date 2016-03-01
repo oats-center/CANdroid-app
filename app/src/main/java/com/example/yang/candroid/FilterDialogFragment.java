@@ -21,8 +21,7 @@ public class FilterDialogFragment extends DialogFragment {
 	private TextView mPgn;
 	private static final String TAG = "FilterDialog";
 	private static final String dTitle = "Please Add Filters";
-	private static final String dMsg = "Press 'Go' without any filter will " +
-		"give you all J1939 messages";
+	private static final String dMsg = "Press 'Cancel' to skip adding filters ";
 
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -34,12 +33,9 @@ public class FilterDialogFragment extends DialogFragment {
 		final AlertDialog d = new AlertDialog.Builder(getActivity())
 				.setView(dView)
 				.setPositiveButton("Add", null)
-				.setNegativeButton("Go",
+				.setNegativeButton("Cancel",
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
-							MainActivity callingActivity =
-								(MainActivity) getActivity();
-							callingActivity.onGo();
 							FilterDialogFragment.this.getDialog().cancel();
 						}
 				})
