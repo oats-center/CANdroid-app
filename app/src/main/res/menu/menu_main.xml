@@ -21,4 +21,12 @@
 		android:checkable="true"
 		android:orderInCategory="100"
 		android:showAsAction="never" />
+
+	<item
+		android:id="@+id/save_option"
+		android:title="Save Filtered Log"
+		android:checkable="true"
+		android:checked="true"
+		android:orderInCategory="100"
+		android:showAsAction="never" />
 </menu>

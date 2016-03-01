@@ -12,8 +12,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.util.Log;
 import android.widget.ToggleButton;
 
@@ -35,14 +33,17 @@ public class MainActivity extends Activity {
 	private ListView mMsgList;
 	private ListView mFilterList;
 	private boolean mIsCandroidServiceRunning;
+	private boolean mSaveFiltered = true;
 	public static Filter mFilter;
 	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "Candroid";
 	private static final String msgFilter = "Adding new filter(s) will stop " +
-		"the current logging, do you wish to continue?";
+		"current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
+	private static final String msgLogOpt = "Change log options will stop " +
+		"current logging, do you wish to continue?";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,12 +88,27 @@ public class MainActivity extends Activity {
 					mFilterDialog.show(mFm, "filter");
 				}
 				return true;
+			case R.id.save_option:
+				mIsCandroidServiceRunning =
+					isServiceRunning(CandroidService.class);
+				if (mIsCandroidServiceRunning) {
+					mWarningDialog.mWarningMsg = msgLogOpt;
+					mWarningDialog.show(mFm, "warning");
+				}
+				if (item.isChecked()) {
+					mSaveFiltered = false;
+					item.setChecked(false);
+				} else {
+					mSaveFiltered = true;
+					item.setChecked(true);
+				}
+				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-	/* callback for toggleButton */
+	/* callback for streamToggle */
 	public void toggleListener(View view) throws IOException {
 		ToggleButton b = (ToggleButton) view;
 		if (b.isChecked()) {
@@ -185,6 +201,7 @@ public class MainActivity extends Activity {
 	private void startForegroundService() {
 		Intent startForegroundIntent = new Intent(
 				CandroidService.FOREGROUND_START);
+		startForegroundIntent.putExtra("save_option", mSaveFiltered);
 		startForegroundIntent.putExtra("filter_list", mFilters);
 		startForegroundIntent.setClass(
 				MainActivity.this, CandroidService.class);

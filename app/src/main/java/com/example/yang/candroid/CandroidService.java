@@ -29,6 +29,7 @@ public class CandroidService extends Service {
 	private static final String CAN_INTERFACE = "can0";
 	private CanSocketJ1939 mSocket;
 	private ArrayList<Filter> mFilters = new ArrayList<Filter>();
+	private boolean mSaveFiltered;
 	public J1939Message mMsg;
 	private FileOutputStream mFos;
 	private OutputStreamWriter mOsw;
@@ -56,7 +57,9 @@ public class CandroidService extends Service {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-			mSocket.setfilter(mFilters);
+			if (mSaveFiltered) {
+				mSocket.setfilter(mFilters);
+			}
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
@@ -88,7 +91,8 @@ public class CandroidService extends Service {
 	private Notification getCompatNotification() {
 		Builder builder = new Builder(this);
 		builder.setSmallIcon(R.drawable.computer)
-				.setContentTitle("Candroid Logging Started")
+				.setContentTitle("CANdroid logging messages ...")
+				.setContentText("Click to return")
 				.setWhen(System.currentTimeMillis());
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(
@@ -113,8 +117,9 @@ public class CandroidService extends Service {
 				super.handleMessage(msg);
 			}
 		};
-		mFilters = (ArrayList<Filter>) intent.getSerializableExtra("filter_list");
 
+		mFilters = (ArrayList<Filter>) intent.getSerializableExtra("filter_list");
+		mSaveFiltered = intent.getExtras().getBoolean("save_option");
 		setupCanSocket();
 		mThread = new recvThread();
 		mThread.start();
