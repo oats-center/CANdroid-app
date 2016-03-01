@@ -6,15 +6,19 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.Context;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.util.Log;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -57,6 +61,12 @@ public class MainActivity extends Activity {
 		mFilterList.setAdapter(mFilterItems);
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
+		mIsCandroidServiceRunning =
+				isServiceRunning(CandroidService.class);
+		if (mIsCandroidServiceRunning) {
+			ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
+			b.setChecked(true);
+		}
     }
 
 	@Override
@@ -103,7 +113,17 @@ public class MainActivity extends Activity {
 					item.setChecked(true);
 				}
 				return true;
-            default:
+			case R.id.view_old_logs:
+				Uri selectedUri = Uri.parse(Environment.getExternalStorageDirectory() + "/Log/");
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+				intent.setDataAndType(selectedUri, "resource/folder");
+				if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
+					startActivity(intent);
+				} else {
+					Toast.makeText(this, "No file manager app found",
+							Toast.LENGTH_LONG).show();
+				}
+			default:
                 return super.onOptionsItemSelected(item);
         }
     }
@@ -148,7 +168,7 @@ public class MainActivity extends Activity {
 		setupCanSocket();
 		startTask();
 		mIsCandroidServiceRunning =
-			isServiceRunning(CandroidService.class);
+				isServiceRunning(CandroidService.class);
 		Log.d(TAG, "isServiceRunning: " + mIsCandroidServiceRunning);
 		if (!mIsCandroidServiceRunning) {
 			startForegroundService();
