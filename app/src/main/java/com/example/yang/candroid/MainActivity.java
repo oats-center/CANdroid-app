@@ -34,9 +34,7 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private ListView mFilterList;
-	private ToggleButton mButton;
 	private boolean mIsCandroidServiceRunning;
-	public static boolean mFilterOn = false;
 	public static Filter mFilter;
 	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
@@ -118,8 +116,6 @@ public class MainActivity extends Activity {
 
 	/* callback for stop everything */
 	public void onStreamStop() {
-		ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
-		b.setChecked(false);
 		stopTask();
 		closeCanSocket();
 		mIsCandroidServiceRunning =
@@ -127,7 +123,8 @@ public class MainActivity extends Activity {
 		if (mIsCandroidServiceRunning) {
 			stopForegroundService();
 		}
-
+		ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
+		b.setChecked(false);
 	}
 
 	/* callback for starting the logger */
@@ -159,9 +156,7 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-			if (mFilterOn) {
-				mSocket.setfilter(mFilters);
-			}
+			mSocket.setfilter(mFilters);
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
@@ -190,6 +185,7 @@ public class MainActivity extends Activity {
 	private void startForegroundService() {
 		Intent startForegroundIntent = new Intent(
 				CandroidService.FOREGROUND_START);
+		startForegroundIntent.putExtra("filter_list", mFilters);
 		startForegroundIntent.setClass(
 				MainActivity.this, CandroidService.class);
 		startService(startForegroundIntent);
@@ -209,15 +205,17 @@ public class MainActivity extends Activity {
         protected Void doInBackground(CanSocketJ1939... socket) {
             try {
                 while (true) {
-					if (socket[0].select(10) == 0) {
-						mMsg = socket[0].recvMsg();
-						publishProgress(mMsg);
-					} else {
-						Log.i(TAG, "no J1939 msgs in past 10 seconds");
+					if (socket[0] != null) {
+						if (socket[0].select(10) == 0) {
+							mMsg = socket[0].recvMsg();
+							publishProgress(mMsg);
+						} else {
+							Log.i(TAG, "no J1939 msgs in past 10 seconds");
+						}
+						if(isCancelled()){
+							break;
+						}
 					}
-					if(isCancelled()){
-						break;
-                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -13,9 +13,11 @@ import android.support.v4.app.NotificationCompat.Builder;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
+import org.isoblue.can.CanSocketJ1939.Filter;
 
 public class CandroidService extends Service {
 	public static final String FOREGROUND_STOP =
@@ -26,6 +28,7 @@ public class CandroidService extends Service {
 	private static final String TAG = "CandroidService";
 	private static final String CAN_INTERFACE = "can0";
 	private CanSocketJ1939 mSocket;
+	private ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	public J1939Message mMsg;
 	private FileOutputStream mFos;
 	private OutputStreamWriter mOsw;
@@ -53,6 +56,7 @@ public class CandroidService extends Service {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
+			mSocket.setfilter(mFilters);
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
@@ -109,6 +113,7 @@ public class CandroidService extends Service {
 				super.handleMessage(msg);
 			}
 		};
+		mFilters = (ArrayList<Filter>) intent.getSerializableExtra("filter_list");
 
 		setupCanSocket();
 		mThread = new recvThread();
