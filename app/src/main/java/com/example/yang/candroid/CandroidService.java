@@ -48,8 +48,38 @@ public class CandroidService extends Service {
 
 	@Override
 	public void onDestroy() {
-		mThread.stop();
+		if (mThread != null) {
+			mThread.stop();
+			mThread = null;
+		}
 		super.onDestroy();
+		Log.d(TAG, "in onDestroy(), destroy " + TAG);
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (mSocket == null) {
+			if (FOREGROUND_START.equals(intent.getAction())) {
+				Log.i(TAG, "in onStartCommmand(), start " + TAG);
+				startForeground(NOTIFICATION_ID,
+						getCompatNotification());
+			}
+			msgHandler = new Handler() {
+				@Override
+				public void handleMessage(Message msg) {
+					super.handleMessage(msg);
+				}
+			};
+
+			mFilters = (ArrayList<Filter>) intent
+				.getSerializableExtra("filter_list");
+			mSaveFiltered = intent.getExtras().getBoolean("save_option");
+			setupCanSocket();
+			mThread = new recvThread();
+			mThread.start();
+		}
+
+		return START_STICKY;
 	}
 
 	private void setupCanSocket() {
@@ -69,6 +99,7 @@ public class CandroidService extends Service {
 		if (mSocket != null) {
 			try {
 				mSocket.close();
+				mSocket = null;
 			} catch (IOException e) {
 				Log.e(TAG, "cannot close socket");
 			}
@@ -96,35 +127,10 @@ public class CandroidService extends Service {
 				.setWhen(System.currentTimeMillis());
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(
-			this, 0, notificationIntent, 0);
+				this, 0, notificationIntent, 0);
 		builder.setContentIntent(contentIntent);
 		Notification notification = builder.build();
 		return notification;
-	}
-
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.i(TAG, "in onStartCommmand...");
-		if (FOREGROUND_START.equals(intent.getAction())) {
-			Log.i(TAG, "Starting CandroidService");
-			startForeground(NOTIFICATION_ID,
-							getCompatNotification());
-		}
-
-		msgHandler = new Handler() {
-			@Override
-			public void handleMessage(Message msg) {
-				super.handleMessage(msg);
-			}
-		};
-
-		mFilters = (ArrayList<Filter>) intent.getSerializableExtra("filter_list");
-		mSaveFiltered = intent.getExtras().getBoolean("save_option");
-		setupCanSocket();
-		mThread = new recvThread();
-		mThread.start();
-
-		return START_STICKY;
 	}
 
 	public class recvThread implements Runnable {
@@ -140,7 +146,7 @@ public class CandroidService extends Service {
 		public void run() {
 			while (!recvThread.interrupted()) {
 				try {
-					if (mSocket.select(10) == 0) {
+					if (mSocket.select(1) == 0) {
 						mMsg = mSocket.recvMsg();
 						if (mOsw == null) {
 							createFile();

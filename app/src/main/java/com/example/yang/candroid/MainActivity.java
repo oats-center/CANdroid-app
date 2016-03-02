@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,7 +19,6 @@ import android.util.Log;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
 	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
-	private static final String TAG = "Candroid";
+	private static final String TAG = "CandroidActivity";
 	private static final String msgFilter = "Adding new filter(s) will stop " +
 		"current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
@@ -51,30 +51,49 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG, "in onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-		mLog = new MsgAdapter(this, 100);
-		mFilterItems = new MsgAdapter(this, 20);
-		mMsgList = (ListView) findViewById(R.id.msglist);
-		mFilterList = (ListView) findViewById(R.id.filterlist);
-		mMsgList.setAdapter(mLog);
-		mFilterList.setAdapter(mFilterItems);
-		mFilterDialog = new FilterDialogFragment();
-		mWarningDialog = new WarningDialogFragment();
-		mIsCandroidServiceRunning =
-				isServiceRunning(CandroidService.class);
-		if (mIsCandroidServiceRunning) {
-			ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
-			b.setChecked(true);
-		}
+		initCandroid();
     }
 
 	@Override
 	protected void onDestroy() {
-		stopTask();
-		closeCanSocket();
+		Log.d(TAG, "in onDestroy()");
+		if (mMsgLoggerTask != null && mSocket != null) {
+			stopTask();
+			closeCanSocket();
+			Log.d(TAG, "socket closed, task stopped");
+		}
 		super.onDestroy();
-		Log.d(TAG, "socket closed, task stopped");
+	}
+
+	@Override
+	protected void onPause() {
+		Log.d(TAG, "in onPause()");
+		super.onPause();
+	}
+
+	@Override
+	protected void onStart() {
+		Log.d(TAG, "in onStart()");
+		if (isServiceRunning(CandroidService.class)) {
+			ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
+			b.setChecked(true);
+			onStreamGo();
+		}
+		super.onStart();
+	}
+
+	@Override
+	protected void onStop() {
+		Log.d(TAG, "in onStop()");
+		if (mMsgLoggerTask != null && mSocket != null) {
+			stopTask();
+			closeCanSocket();
+			Log.d(TAG, "socket closed, task stopped");
+		}
+		super.onStop();
 	}
 
     @Override
@@ -89,9 +108,7 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         switch (id) {
 			case R.id.add_filters:
-				mIsCandroidServiceRunning =
-					isServiceRunning(CandroidService.class);
-				if (mIsCandroidServiceRunning) {
+				if (isServiceRunning(CandroidService.class)) {
 					mWarningDialog.mWarningMsg = msgFilter;
 					mWarningDialog.show(mFm, "warning");
 				} else {
@@ -99,9 +116,7 @@ public class MainActivity extends Activity {
 				}
 				return true;
 			case R.id.save_option:
-				mIsCandroidServiceRunning =
-					isServiceRunning(CandroidService.class);
-				if (mIsCandroidServiceRunning) {
+				if (isServiceRunning(CandroidService.class)) {
 					mWarningDialog.mWarningMsg = msgLogOpt;
 					mWarningDialog.show(mFm, "warning");
 				}
@@ -114,7 +129,8 @@ public class MainActivity extends Activity {
 				}
 				return true;
 			case R.id.view_old_logs:
-				Uri selectedUri = Uri.parse(Environment.getExternalStorageDirectory() + "/Log/");
+				Uri selectedUri = Uri.parse(Environment
+					.getExternalStorageDirectory() + "/Log/");
 				Intent intent = new Intent(Intent.ACTION_VIEW);
 				intent.setDataAndType(selectedUri, "resource/folder");
 				if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
@@ -132,7 +148,7 @@ public class MainActivity extends Activity {
 	public void toggleListener(View view) throws IOException {
 		ToggleButton b = (ToggleButton) view;
 		if (b.isChecked()) {
-			onGo();
+			onStreamGo();
 		} else {
 			mIsCandroidServiceRunning =
 				isServiceRunning(CandroidService.class);
@@ -143,36 +159,40 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	public void initCandroid() {
+		Log.d(TAG, "initializing parameters in initCandroid()");
+		mLog = new MsgAdapter(this, 100);
+		mFilterItems = new MsgAdapter(this, 20);
+		mMsgList = (ListView) findViewById(R.id.msglist);
+		mFilterList = (ListView) findViewById(R.id.filterlist);
+		mMsgList.setAdapter(mLog);
+		mFilterList.setAdapter(mFilterItems);
+		mFilterDialog = new FilterDialogFragment();
+		mWarningDialog = new WarningDialogFragment();
+	}
+
 	/* callback for adding new filters */
 	public void onAddNewFilter() {
 		onStreamStop();
 		mFilterItems.clear();
-		mFilterDialog.show(mFm, "filter");
 	}
 
 	/* callback for stop everything */
 	public void onStreamStop() {
 		stopTask();
 		closeCanSocket();
-		mIsCandroidServiceRunning =
-			isServiceRunning(CandroidService.class);
-		if (mIsCandroidServiceRunning) {
-			stopForegroundService();
-		}
+		stopForegroundService();
 		ToggleButton b = (ToggleButton) findViewById(R.id.streamToggle);
 		b.setChecked(false);
 	}
 
 	/* callback for starting the logger */
-	public void onGo() {
+	public void onStreamGo() {
 		setupCanSocket();
 		startTask();
-		mIsCandroidServiceRunning =
-				isServiceRunning(CandroidService.class);
-		Log.d(TAG, "isServiceRunning: " + mIsCandroidServiceRunning);
-		if (!mIsCandroidServiceRunning) {
-			startForegroundService();
-		}
+		Log.d(TAG, "isServiceRunning: " +
+			isServiceRunning(CandroidService.class));
+		startForegroundService();
 	}
 
 	private boolean isServiceRunning(Class<?> serviceClass) {
@@ -202,6 +222,7 @@ public class MainActivity extends Activity {
 		if (mSocket != null) {
 			try {
 				mSocket.close();
+				mSocket = null;
 			} catch (IOException e) {
 				Log.e(TAG, "cannot close socket");
 			}
@@ -209,12 +230,15 @@ public class MainActivity extends Activity {
 	}
 
 	private void startTask() {
+		Log.d(TAG, "in startTask(), start AsyncTask");
 		mMsgLoggerTask = new MsgLoggerTask();
 		mMsgLoggerTask.execute(mSocket);
 	}
 
 	private void stopTask() {
+		Log.d(TAG, "in stopTask(), cancel AsyncTask");
 		mMsgLoggerTask.cancel(true);
+		SystemClock.sleep(100);
 		mMsgLoggerTask = null;
 	}
 
@@ -241,13 +265,11 @@ public class MainActivity extends Activity {
         @Override
         protected Void doInBackground(CanSocketJ1939... socket) {
             try {
-                while (true) {
+                while (!isCancelled()) {
 					if (socket[0] != null) {
-						if (socket[0].select(10) == 0) {
+						if (socket[0].select(1) == 0) {
 							mMsg = socket[0].recvMsg();
 							publishProgress(mMsg);
-						} else {
-							Log.i(TAG, "no J1939 msgs in past 10 seconds");
 						}
 						if(isCancelled()){
 							break;
