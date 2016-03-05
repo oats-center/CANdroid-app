@@ -53,29 +53,20 @@ public class FilterDialogFragment extends DialogFragment {
 						if (paramsCheck(mName.getText().toString(),
 										mAddr.getText().toString(),
 										mPgn.getText().toString()) == -1) {
-								Toast.makeText(getActivity(), "field(s) cannot"
-											+ " be empty",
-											Toast.LENGTH_SHORT).show();
+							Toast.makeText(getActivity(), "filter not added",
+									Toast.LENGTH_SHORT).show();
 						} else {
-							int name = Integer.parseInt(
-								mName.getText().toString());
-							int addr = Integer.parseInt(
-								mAddr.getText().toString());
-							int pgn = Integer.parseInt(
-								mPgn.getText().toString());
+							long name = Long.parseLong(mName.getText().toString());
+							int addr = Integer.parseInt(mAddr.getText().toString());
+							int pgn = Integer.parseInt(mPgn.getText().toString());
 							MainActivity.mFilter = new Filter(name, addr, pgn);
 							MainActivity.mFilters.add(MainActivity.mFilter);
 							MainActivity.mFilterItems.add(
-								"Filtering on"	+
-								" src name: " + mName.getText().toString() +
-								" src addr: " + mAddr.getText().toString() +
-								" pgn: " + mPgn.getText().toString());
-							Log.d(TAG, "add filter," +
-										" name: " + mName.getText().toString() +
-										" addr: " + mAddr.getText().toString() +
-										" pgn: " + mPgn.getText().toString());
+									"Filtering on" + MainActivity.mFilter.toString());
+							Log.d(TAG, "add filter: "
+									+ MainActivity.mFilter.toString());
 							Toast.makeText(getActivity(), "filter added",
-								Toast.LENGTH_SHORT).show();
+									Toast.LENGTH_SHORT).show();
 						}
 					}
 				});
@@ -86,9 +77,23 @@ public class FilterDialogFragment extends DialogFragment {
 
 	public int paramsCheck(String name, String addr, String pgn) {
 		if (name.isEmpty() || addr.isEmpty() || pgn.isEmpty()) {
+			Toast.makeText(getActivity(), "field(s) cannot"
+							+ " be empty",
+					Toast.LENGTH_SHORT).show();
 			return -1;
-		} else {
-			return 0;
 		}
+		int addrInt = Integer.parseInt(addr);
+		int pgnInt = Integer.parseInt(pgn);
+		if (addrInt >= 256) {
+			Toast.makeText(getActivity(), "addr should be less than 0xFF",
+					Toast.LENGTH_SHORT).show();
+			return -1;
+		}
+		if (pgnInt > 262143) {
+			Toast.makeText(getActivity(), "pgn should be less than 0x3FFFF",
+					Toast.LENGTH_SHORT).show();
+			return -1;
+		}
+		return 0;
 	}
 }

@@ -1,9 +1,11 @@
 package com.example.yang.candroid;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.Service;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Handler;
 import android.os.Message;
@@ -21,19 +23,22 @@ import org.isoblue.can.CanSocketJ1939.Filter;
 
 public class CandroidService extends Service {
 	public static final String FOREGROUND_STOP =
-			"com.example.yang.candroid.CandroidService.FOREGROUND.stop";
+		"com.example.yang.candroid.CandroidService.FOREGROUND.stop";
 	public static final String FOREGROUND_START =
-	"com.example.yang.candroid.CandroidService.FOREGROUND.start";
+		"com.example.yang.candroid.CandroidService.FOREGROUND.start";
+	public static final String BROADCAST_ACTION =
+		"com.example.yang.candroid.CandroidService.broadcast";
 	public static final int NOTIFICATION_ID = 101;
 	private static final String TAG = "CandroidService";
 	private static final String CAN_INTERFACE = "can0";
 	private CanSocketJ1939 mSocket;
 	private ArrayList<Filter> mFilters = new ArrayList<Filter>();
-	private boolean mSaveFiltered;
+	private boolean mSaveFiltered = false;
 	public J1939Message mMsg;
 	private FileOutputStream mFos;
 	private OutputStreamWriter mOsw;
 	private Handler msgHandler;
+	private Intent bcIntent;
 	private recvThread mThread;
 
 	@Override
@@ -58,6 +63,7 @@ public class CandroidService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		postOldData();
 		if (mSocket == null) {
 			if (FOREGROUND_START.equals(intent.getAction())) {
 				Log.i(TAG, "in onStartCommmand(), start " + TAG);
@@ -80,6 +86,16 @@ public class CandroidService extends Service {
 		}
 
 		return START_STICKY;
+	}
+
+	private void postOldData() {
+		Log.d(TAG, "in postOldData()");
+		bcIntent = new Intent(BROADCAST_ACTION);
+		Bundle b = new Bundle();
+		b.putBoolean("saveOption", mSaveFiltered);
+		b.putSerializable("filters", mFilters);
+		bcIntent.putExtra("serviceBundle", b);
+		sendBroadcast(bcIntent);
 	}
 
 	private void setupCanSocket() {

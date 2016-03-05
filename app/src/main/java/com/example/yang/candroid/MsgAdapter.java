@@ -1,8 +1,5 @@
 package com.example.yang.candroid;
 
-import java.io.IOException;
-import java.util.Queue;
-
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 import android.content.Context;

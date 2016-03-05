@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -37,7 +39,7 @@ public class MainActivity extends Activity {
 	private ListView mMsgList;
 	private ListView mFilterList;
 	private boolean mIsCandroidServiceRunning;
-	private boolean mSaveFiltered = true;
+	private boolean mSaveFiltered = false;
 	public static Filter mFilter;
 	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
@@ -55,7 +57,32 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 		initCandroid();
-    }
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		registerReceiver(broadcastReceiver,
+				new IntentFilter(CandroidService.BROADCAST_ACTION));
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle savedInstanceState) {
+		Log.d(TAG, "in onSaveInstanceState()");
+		String[] values = mFilterItems.getValues();
+		savedInstanceState.putStringArray("filtersList", values);
+		super.onSaveInstanceState(savedInstanceState);
+	}
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		Log.d(TAG, "in onRestoreInstanceState()");
+		String[] values = savedInstanceState.getStringArray("filtersList");
+		if (values != null) {
+			mFilterItems.addArray(values);
+		}
+	}
 
 	@Override
 	protected void onDestroy() {
@@ -71,6 +98,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause() {
 		Log.d(TAG, "in onPause()");
+		unregisterReceiver(broadcastReceiver);
 		super.onPause();
 	}
 
@@ -94,6 +122,13 @@ public class MainActivity extends Activity {
 			Log.d(TAG, "socket closed, task stopped");
 		}
 		super.onStop();
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		super.onPrepareOptionsMenu(menu);
+		menu.findItem(R.id.save_option).setChecked(mSaveFiltered);
+		return true;
 	}
 
     @Override
@@ -156,6 +191,29 @@ public class MainActivity extends Activity {
 				mWarningDialog.mWarningMsg = msgStop;
 				mWarningDialog.show(mFm, "warning");
 			}
+		}
+	}
+
+	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG, "in OnReceive()");
+			renderOldView(intent);
+		}
+	};
+
+	private void renderOldView(Intent intent) {
+		Bundle b = intent.getBundleExtra("serviceBundle");
+		mSaveFiltered = b.getBoolean("saveOption");
+		mFilters = (ArrayList<Filter>) b.getSerializable("filters");
+		ArrayList<String> filterStrList = new ArrayList<String>();
+		for (Filter f: mFilters) {
+			filterStrList.add("Filtering on " + f.toString());
+		}
+		String[] filterStr = new String[filterStrList.size()];
+		filterStr = filterStrList.toArray(filterStr);
+		if (mFilterItems.isEmpty()) {
+			mFilterItems.addArray(filterStr);
 		}
 	}
 
