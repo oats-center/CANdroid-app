@@ -21,6 +21,9 @@ import android.util.Log;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -38,6 +41,7 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private ListView mFilterList;
+	private RequestQueue mQueue;
 	private boolean mIsCandroidServiceRunning;
 	private boolean mSaveFiltered = false;
 	public static Filter mFilter;
@@ -45,11 +49,13 @@ public class MainActivity extends Activity {
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "CandroidActivity";
+	private static final String URL = "something";
 	private static final String msgFilter = "Adding new filter(s) will stop " +
 		"current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
 	private static final String msgLogOpt = "Change log options will stop " +
 		"current logging, do you wish to continue?";
+	private final String token = "E620jPvYjmu_8h3jI2vhPiGSgXIEM43kZImNB7_p";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -227,6 +233,7 @@ public class MainActivity extends Activity {
 		mFilterList.setAdapter(mFilterItems);
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
+		mQueue = Volley.newRequestQueue(getApplicationContext());
 	}
 
 	/* callback for adding new filters */
@@ -249,7 +256,7 @@ public class MainActivity extends Activity {
 		setupCanSocket();
 		startTask();
 		Log.d(TAG, "isServiceRunning: " +
-			isServiceRunning(CandroidService.class));
+				isServiceRunning(CandroidService.class));
 		startForegroundService();
 	}
 
@@ -343,6 +350,9 @@ public class MainActivity extends Activity {
 
         protected void onProgressUpdate(J1939Message... msg) {
 			mLog.add(msg[0].toString());
+			mQueue.add(new MessagePostRequest(token,
+			"http://128.46.213.95:3000/bookmarks/candroid",
+			msg[0].toString()));
         }
 
         protected void onPostExecute(Void Result) {
