@@ -22,7 +22,8 @@ public class MessagePostRequest extends JsonRequest<Void> {
 
 	public MessagePostRequest(String accessToken, String url,
 		String msg) {
-		super(Request.Method.POST, url, makeJson(msg).toString(), new Listener(), new ErrorListener());
+		super(Request.Method.POST, url, makeJson(msg).toString(),
+			new Listener(), new ErrorListener());
 		mAccessToken = accessToken;
 	}
 
