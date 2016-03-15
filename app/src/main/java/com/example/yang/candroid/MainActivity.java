@@ -49,13 +49,12 @@ public class MainActivity extends Activity {
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "CandroidActivity";
-	private static final String URL = "something";
 	private static final String msgFilter = "Adding new filter(s) will stop " +
 		"current logging, do you wish to continue?";
 	private static final String msgStop = "Stop logging and Candroid Service?";
 	private static final String msgLogOpt = "Change log options will stop " +
 		"current logging, do you wish to continue?";
-	private final String token = "E620jPvYjmu_8h3jI2vhPiGSgXIEM43kZImNB7_p";
+	//private final String token = "E620jPvYjmu_8h3jI2vhPiGSgXIEM43kZImNB7_p";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -253,6 +252,7 @@ public class MainActivity extends Activity {
 
 	/* callback for starting the logger */
 	public void onStreamGo() {
+		mQueue.add(new ConfigGetRequest());
 		setupCanSocket();
 		startTask();
 		Log.d(TAG, "isServiceRunning: " +
@@ -350,9 +350,10 @@ public class MainActivity extends Activity {
 
         protected void onProgressUpdate(J1939Message... msg) {
 			mLog.add(msg[0].toString());
-			mQueue.add(new MessagePostRequest(token,
+/*			mQueue.add(new MessagePostRequest(token,
 			"http://128.46.213.95:3000/bookmarks/candroid",
 			msg[0].toString()));
+*/
         }
 
         protected void onPostExecute(Void Result) {
