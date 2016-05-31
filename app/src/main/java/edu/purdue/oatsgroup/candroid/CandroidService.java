@@ -1,6 +1,5 @@
-package com.example.yang.candroid;
+package edu.purdue.oatsgroup.candroid;
 
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.Service;
 import android.app.PendingIntent;
@@ -23,11 +22,11 @@ import org.isoblue.can.CanSocketJ1939.Filter;
 
 public class CandroidService extends Service {
 	public static final String FOREGROUND_STOP =
-		"com.example.yang.candroid.CandroidService.FOREGROUND.stop";
+		"edu.purdue.oatsgroup.candroid.CandroidService.FOREGROUND.stop";
 	public static final String FOREGROUND_START =
-		"com.example.yang.candroid.CandroidService.FOREGROUND.start";
+		"edu.purdue.oatsgroup.candroid.CandroidService.FOREGROUND.start";
 	public static final String BROADCAST_ACTION =
-		"com.example.yang.candroid.CandroidService.broadcast";
+		"edu.purdue.oatsgroup.candroid.CandroidService.broadcast";
 	public static final int NOTIFICATION_ID = 101;
 	private static final String TAG = "CandroidService";
 	private static final String CAN_INTERFACE = "can0";

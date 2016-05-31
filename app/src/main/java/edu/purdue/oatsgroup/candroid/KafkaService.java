@@ -1,12 +1,10 @@
-package com.example.yang.candroid;
+package edu.purdue.oatsgroup.candroid;
 
 import android.app.Notification;
 import android.app.Service;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.IBinder;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.support.v4.app.NotificationCompat.Builder;
 
@@ -23,11 +21,11 @@ import org.isoblue.can.CanSocketJ1939.J1939Message;
 public class KafkaService extends Service {
 
 	public static final String FOREGROUND_STOP =
-		"com.example.yang.candroid.KafkaService.FOREGROUND.stop";
+		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.stop";
 	public static final String FOREGROUND_START =
-		"com.example.yang.candroid.KafkaService.FOREGROUND.start";
+		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.start";
 	public static final String BROADCAST_ACTION =
-		"com.example.yang.candroid.KafkaService.broadcast";
+		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.broadcast";
 	public static final int NOTIFICATION_ID = 101;
 
 	public CanSocketJ1939 mSocket0;
@@ -107,8 +105,7 @@ public class KafkaService extends Service {
 				.setContentTitle("Kafka pushing messages ...")
 				.setWhen(System.currentTimeMillis());
 		Intent notificationIntent = new Intent(this, MainActivity.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(
-				this, 0, notificationIntent, 0);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 		builder.setContentIntent(contentIntent);
 		Notification notification = builder.build();
 

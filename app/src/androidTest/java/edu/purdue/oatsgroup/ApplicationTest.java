@@ -1,4 +1,4 @@
-package com.example.yang.candroid;
+package com.example.yang.oatsgroup;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -1,4 +1,4 @@
-package com.example.yang.candroid;
+package edu.purdue.oatsgroup.candroid;
 
 import android.app.Activity;
 import android.app.ActivityManager;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.example.yang.candroid" >
+	package="edu.purdue.oatsgroup.candroid" >
 
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -13,7 +13,7 @@
 		android:label="@string/app_name"
 		android:theme="@style/AppTheme" >
 		<activity
-			android:name="com.example.yang.candroid.MainActivity"
+			android:name="edu.purdue.oatsgroup.candroid.MainActivity"
 			android:label="@string/app_name"
 			android:launchMode="singleInstance"
 			android:screenOrientation="portrait" >
@@ -24,10 +24,10 @@
 			</intent-filter>
 		</activity>
 		<service
-			android:name=".CandroidService" >
+			android:name="edu.purdue.oatsgroup.candroid.CandroidService" >
 		</service>
 		<service
-			android:name=".KafkaService" >
+			android:name="edu.purdue.oatsgroup.candroid.KafkaService" >
 		</service>
 	</application>
 
