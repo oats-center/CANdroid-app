@@ -23,14 +23,6 @@ import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
@@ -46,9 +38,6 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private ListView mFilterList;
-	private Properties mKafkaProps;
-	private Producer<String, String> mProducer;
-	private ProducerRecord<String, String> mProducerRecord;
 
 	//	private RequestQueue mQueue;
 	private boolean mIsCandroidServiceRunning;
@@ -65,7 +54,6 @@ public class MainActivity extends Activity {
 	private static final String msgStop = "Stop logging and Candroid Service?";
 	private static final String msgLogOpt = "Change log options will stop " +
 		"current logging, do you wish to continue?";
-	//private final String token = "E620jPvYjmu_8h3jI2vhPiGSgXIEM43kZImNB7_p";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -322,14 +310,20 @@ public class MainActivity extends Activity {
 		startForegroundIntent.putExtra("filter_list", mFilters);
 		startForegroundIntent.setClass(MainActivity.this, CandroidService.class);
 		startService(startForegroundIntent);
+
+		Intent kafkaIntent = new Intent(KafkaService.FOREGROUND_START);
+		kafkaIntent.setClass(MainActivity.this, KafkaService.class);
+		startService(kafkaIntent);
 	}
 
 	private void stopForegroundService() {
-		Intent stopForegroundIntent = new Intent(
-				CandroidService.FOREGROUND_STOP);
-		stopForegroundIntent.setClass(
-				MainActivity.this, CandroidService.class);
+		Intent stopForegroundIntent = new Intent(CandroidService.FOREGROUND_STOP);
+		stopForegroundIntent.setClass(MainActivity.this, CandroidService.class);
 		stopService(stopForegroundIntent);
+
+		Intent stopKafkaIntent = new Intent(KafkaService.FOREGROUND_STOP);
+		stopKafkaIntent.setClass(MainActivity.this, KafkaService.class);
+		stopService(stopKafkaIntent);
 	}
 
 	private class MsgLoggerTask extends AsyncTask
@@ -338,27 +332,6 @@ public class MainActivity extends Activity {
 			protected Void doInBackground(CanSocketJ1939... socket) {
 				try {
 					while (!isCancelled()) {
-						mKafkaProps = new Properties();
-						mKafkaProps.put("bootstrap.servers", "vip4.ecn.purdue.edu:9092");
-						mKafkaProps.put("acks", "all");
-						mKafkaProps.put("retries", 0);
-						mKafkaProps.put("batch.size", 16384);
-						mKafkaProps.put("linger.ms", 1);
-						mKafkaProps.put("buffer.memory", 33554432);
-						mKafkaProps.put("key.serializer",
-								"org.apache.kafka.common.serialization.StringSerializer");
-						mKafkaProps.put("value.serializer",
-								"org.apache.kafka.common.serialization.StringSerializer");
-
-						mProducer = new KafkaProducer<>(mKafkaProps);
-
-						for (int i = 0; i < 100; i++) {
-							mProducer.send(new ProducerRecord<String, String>("isobus", Integer.toString(i),
-										Integer.toString(i)));
-						}
-
-						mProducer.close();
-
 						if (socket[0] != null) {
 							if (socket[0].select(1) == 0) {
 								mMsg = socket[0].recvMsg();
