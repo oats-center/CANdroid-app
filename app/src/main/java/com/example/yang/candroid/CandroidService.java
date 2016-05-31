@@ -104,7 +104,7 @@ public class CandroidService extends Service {
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
 			if (mSaveFiltered) {
-				mSocket.setfilter(mFilters);
+				mSocket.setJ1939Filter(mFilters);
 			}
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");

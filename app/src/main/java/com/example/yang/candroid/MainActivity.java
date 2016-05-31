@@ -21,11 +21,16 @@ import android.util.Log;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.Volley;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
@@ -41,12 +46,18 @@ public class MainActivity extends Activity {
 	private FragmentManager mFm = getFragmentManager();
 	private ListView mMsgList;
 	private ListView mFilterList;
-	private RequestQueue mQueue;
+	private Properties mKafkaProps;
+	private Producer<String, String> mProducer;
+	private ProducerRecord<String, String> mProducerRecord;
+
+	//	private RequestQueue mQueue;
 	private boolean mIsCandroidServiceRunning;
 	private boolean mSaveFiltered = false;
+
 	public static Filter mFilter;
 	public static MsgAdapter mFilterItems;
 	public static ArrayList<Filter> mFilters = new ArrayList<Filter>();
+
 	private static final String CAN_INTERFACE = "can0";
 	private static final String TAG = "CandroidActivity";
 	private static final String msgFilter = "Adding new filter(s) will stop " +
@@ -56,19 +67,18 @@ public class MainActivity extends Activity {
 		"current logging, do you wish to continue?";
 	//private final String token = "E620jPvYjmu_8h3jI2vhPiGSgXIEM43kZImNB7_p";
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(TAG, "in onCreate()");
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 		initCandroid();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(broadcastReceiver,
-				new IntentFilter(CandroidService.BROADCAST_ACTION));
+		registerReceiver(broadcastReceiver, new IntentFilter(CandroidService.BROADCAST_ACTION));
 	}
 
 	@Override
@@ -136,17 +146,17 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id) {
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		int id = item.getItemId();
+		switch (id) {
 			case R.id.add_filters:
 				if (isServiceRunning(CandroidService.class)) {
 					mWarningDialog.mWarningMsg = msgFilter;
@@ -169,20 +179,18 @@ public class MainActivity extends Activity {
 				}
 				return true;
 			case R.id.view_old_logs:
-				Uri selectedUri = Uri.parse(Environment
-					.getExternalStorageDirectory() + "/Log/");
+				Uri selectedUri = Uri.parse(Environment.getExternalStorageDirectory() + "/Log/");
 				Intent intent = new Intent(Intent.ACTION_VIEW);
 				intent.setDataAndType(selectedUri, "resource/folder");
 				if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
 					startActivity(intent);
 				} else {
-					Toast.makeText(this, "No file manager app found",
-							Toast.LENGTH_LONG).show();
+					Toast.makeText(this, "No file manager app found", Toast.LENGTH_LONG).show();
 				}
 			default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
+				return super.onOptionsItemSelected(item);
+		}
+	}
 
 	/* callback for streamToggle */
 	public void toggleListener(View view) throws IOException {
@@ -224,6 +232,7 @@ public class MainActivity extends Activity {
 
 	public void initCandroid() {
 		Log.d(TAG, "initializing parameters in initCandroid()");
+
 		mLog = new MsgAdapter(this, 100);
 		mFilterItems = new MsgAdapter(this, 20);
 		mMsgList = (ListView) findViewById(R.id.msglist);
@@ -232,7 +241,7 @@ public class MainActivity extends Activity {
 		mFilterList.setAdapter(mFilterItems);
 		mFilterDialog = new FilterDialogFragment();
 		mWarningDialog = new WarningDialogFragment();
-		mQueue = Volley.newRequestQueue(getApplicationContext());
+		//		mQueue = Volley.newRequestQueue(getApplicationContext());
 	}
 
 	/* callback for adding new filters */
@@ -252,7 +261,7 @@ public class MainActivity extends Activity {
 
 	/* callback for starting the logger */
 	public void onStreamGo() {
-		mQueue.add(new ConfigGetRequest());
+		//		mQueue.add(new ConfigGetRequest());
 		setupCanSocket();
 		startTask();
 		Log.d(TAG, "isServiceRunning: " +
@@ -262,13 +271,13 @@ public class MainActivity extends Activity {
 
 	private boolean isServiceRunning(Class<?> serviceClass) {
 		ActivityManager manager = (ActivityManager)
-		getSystemService(Context.ACTIVITY_SERVICE);
+			getSystemService(Context.ACTIVITY_SERVICE);
 		for (RunningServiceInfo service :
-			manager.getRunningServices(Integer.MAX_VALUE)) {
+				manager.getRunningServices(Integer.MAX_VALUE)) {
 			if (serviceClass.getName().equals(service.service.getClassName())) {
 				return true;
 			}
-		}
+				}
 		return false;
 	}
 
@@ -277,7 +286,7 @@ public class MainActivity extends Activity {
 			mSocket = new CanSocketJ1939(CAN_INTERFACE);
 			mSocket.setPromisc();
 			mSocket.setTimestamp();
-			mSocket.setfilter(mFilters);
+			mSocket.setJ1939Filter(mFilters);
 		} catch (IOException e) {
 			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
 		}
@@ -308,12 +317,10 @@ public class MainActivity extends Activity {
 	}
 
 	private void startForegroundService() {
-		Intent startForegroundIntent = new Intent(
-				CandroidService.FOREGROUND_START);
+		Intent startForegroundIntent = new Intent(CandroidService.FOREGROUND_START);
 		startForegroundIntent.putExtra("save_option", mSaveFiltered);
 		startForegroundIntent.putExtra("filter_list", mFilters);
-		startForegroundIntent.setClass(
-				MainActivity.this, CandroidService.class);
+		startForegroundIntent.setClass(MainActivity.this, CandroidService.class);
 		startService(startForegroundIntent);
 	}
 
@@ -327,37 +334,53 @@ public class MainActivity extends Activity {
 
 	private class MsgLoggerTask extends AsyncTask
 		<CanSocketJ1939, J1939Message, Void> {
-        @Override
-        protected Void doInBackground(CanSocketJ1939... socket) {
-            try {
-                while (!isCancelled()) {
-					if (socket[0] != null) {
-						if (socket[0].select(1) == 0) {
-							mMsg = socket[0].recvMsg();
-							publishProgress(mMsg);
+			@Override
+			protected Void doInBackground(CanSocketJ1939... socket) {
+				try {
+					while (!isCancelled()) {
+						mKafkaProps = new Properties();
+						mKafkaProps.put("bootstrap.servers", "vip4.ecn.purdue.edu:9092");
+						mKafkaProps.put("acks", "all");
+						mKafkaProps.put("retries", 0);
+						mKafkaProps.put("batch.size", 16384);
+						mKafkaProps.put("linger.ms", 1);
+						mKafkaProps.put("buffer.memory", 33554432);
+						mKafkaProps.put("key.serializer",
+								"org.apache.kafka.common.serialization.StringSerializer");
+						mKafkaProps.put("value.serializer",
+								"org.apache.kafka.common.serialization.StringSerializer");
+
+						mProducer = new KafkaProducer<>(mKafkaProps);
+
+						for (int i = 0; i < 100; i++) {
+							mProducer.send(new ProducerRecord<String, String>("isobus", Integer.toString(i),
+										Integer.toString(i)));
 						}
-						if(isCancelled()){
-							break;
+
+						mProducer.close();
+
+						if (socket[0] != null) {
+							if (socket[0].select(1) == 0) {
+								mMsg = socket[0].recvMsg();
+								publishProgress(mMsg);
+							}
+							if(isCancelled()) {
+								break;
+							}
 						}
 					}
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return null;
+			}
 
-            return null;
-        }
+			protected void onProgressUpdate(J1939Message... msg) {
+				mLog.add(msg[0].toString());
+			}
 
-        protected void onProgressUpdate(J1939Message... msg) {
-			mLog.add(msg[0].toString());
-/*			mQueue.add(new MessagePostRequest(token,
-			"http://128.46.213.95:3000/bookmarks/candroid",
-			msg[0].toString()));
-*/
-        }
-
-        protected void onPostExecute(Void Result) {
-            // Do nothing
-        }
-	}
+			protected void onPostExecute(Void Result) {
+				// Do nothing
+			}
+		}
 }
