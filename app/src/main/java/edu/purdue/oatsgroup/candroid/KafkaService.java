@@ -9,11 +9,19 @@ import android.util.Log;
 import android.support.v4.app.NotificationCompat.Builder;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Properties;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.io.IOUtils;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumWriter;
 
 import org.isoblue.can.CanSocketJ1939;
 import org.isoblue.can.CanSocketJ1939.J1939Message;
@@ -21,22 +29,23 @@ import org.isoblue.can.CanSocketJ1939.J1939Message;
 public class KafkaService extends Service {
 
 	public static final String FOREGROUND_STOP =
-		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.stop";
+		"edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.stop";
 	public static final String FOREGROUND_START =
-		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.start";
-	public static final String BROADCAST_ACTION =
-		"com.example.yang.edu.purdue.oatsgroup.candroid.KafkaService.broadcast";
+		"edu.purdue.oatsgroup.candroid.KafkaService.FOREGROUND.start";
 	public static final int NOTIFICATION_ID = 101;
 
 	public CanSocketJ1939 mSocket0;
 	public CanSocketJ1939 mSocket1;
 
 	public Properties mConfig;
-	public ProducerRecord<String, String> mProducerRecord;
-	public static Producer<String, String> mProducer;
+	public static Producer<String, byte[]> mProducer;
 
 	public kafkaThread mT0;
 	public kafkaThread mT1;
+
+	private SpecificDatumWriter<J1939MessageAvro> avroEventWriter =
+		new SpecificDatumWriter<>(J1939MessageAvro.SCHEMA$);
+	private EncoderFactory avroEncoderFactory = EncoderFactory.get();
 
 	private static final String can0 = "can0";
 	private static final String can1 = "can1";
@@ -121,11 +130,8 @@ public class KafkaService extends Service {
 		mConfig.put("batch.size", 16384);
 		mConfig.put("linger.ms", 1);
 		mConfig.put("buffer.memory", 33554432);
-		mConfig.put("key.serializer",
-				"org.apache.kafka.common.serialization.StringSerializer");
-		mConfig.put("value.serializer",
-				"org.apache.kafka.common.serialization.StringSerializer");
-
+		mConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		mConfig.put("value.serializer","org.apache.kafka.common.serialization.ByteArraySerializer");
 	}
 
 	public class kafkaThread implements Runnable {
@@ -168,8 +174,24 @@ public class KafkaService extends Service {
 			while (!kafkaThread.interrupted()) {
 				try {
 					if (socket.select(1) == 0) {
+						ByteArrayOutputStream stream = new ByteArrayOutputStream();
+						BinaryEncoder binaryEncoder = avroEncoderFactory.binaryEncoder(stream, null);
+
+						// receive msg from socket
 						J1939Message msg = socket.recvMsg();
-						mProducer.send(new ProducerRecord<String, String>(topic, candroidKey, msg.toString()));
+
+						// convert msg data to data buffer
+						ByteBuffer dataBuf = ByteBuffer.wrap(msg.data);
+
+						// feed them into avro type
+						J1939MessageAvro msgAvro = new J1939MessageAvro(msg.timestamp, msg.pgn, dataBuf);
+
+						avroEventWriter.write(msgAvro, binaryEncoder);
+						binaryEncoder.flush();
+						IOUtils.closeQuietly(stream);
+
+						mProducer.send(new ProducerRecord<>(topic, candroidKey,
+									stream.toByteArray()));
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "cannot select on socket");

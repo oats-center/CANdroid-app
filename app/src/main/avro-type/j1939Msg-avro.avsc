@@ -1,0 +1,20 @@
+{
+	"namespace": "edu.purdue.oatsgroup.candroid",
+	"type": "record",
+	"name": "J1939MessageAvro",
+	"fields": [
+		{
+			"name": "timestamp",
+			"type": "double"
+		},
+		{
+			"name": "pgn",
+			"type": "int"
+		},
+		{
+			"name": "data",
+			"type": "bytes"
+		}
+	]
+}
+
