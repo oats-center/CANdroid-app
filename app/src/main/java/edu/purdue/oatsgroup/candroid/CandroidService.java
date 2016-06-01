@@ -6,8 +6,6 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.support.v4.app.NotificationCompat.Builder;
 
@@ -27,67 +25,82 @@ public class CandroidService extends Service {
 		"edu.purdue.oatsgroup.candroid.CandroidService.FOREGROUND.start";
 	public static final String BROADCAST_ACTION =
 		"edu.purdue.oatsgroup.candroid.CandroidService.broadcast";
-	public static final int NOTIFICATION_ID = 101;
-	private static final String TAG = "CandroidService";
-	private static final String CAN_INTERFACE = "can0";
-	private CanSocketJ1939 mSocket;
+	public static final int NOTIFICATION_ID = 102;
+
+	public CanSocketJ1939 mSocket0;
+	public CanSocketJ1939 mSocket1;
+
 	private ArrayList<Filter> mFilters = new ArrayList<Filter>();
+
 	private boolean mSaveFiltered = false;
-	public J1939Message mMsg;
+
 	private FileOutputStream mFos;
 	private OutputStreamWriter mOsw;
-	private Handler msgHandler;
 	private Intent bcIntent;
-	private recvThread mThread;
+
+	private logThread mT0;
+	private logThread mT1;
+
+	private static final String can0 = "can0";
+	private static final String can1 = "can1";
+
+	private static final String TAG = "CandroidService";
 
 	@Override
 	public void onCreate() {
+
 		super.onCreate();
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
+
 		return null;
 	}
 
 	@Override
 	public void onDestroy() {
-		if (mThread != null) {
-			mThread.stop();
-			mThread = null;
+
+		if (mT0 != null) {
+			mT0.stop();
+			mT0 = null;
 		}
+
+		if (mT1 != null) {
+			mT1.stop();
+			mT1 = null;
+		}
+
 		super.onDestroy();
 		Log.d(TAG, "in onDestroy(), destroy " + TAG);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+
 		postOldData();
-		if (mSocket == null) {
+
+		if (mSocket0 == null && mSocket1 == null) {
 			if (FOREGROUND_START.equals(intent.getAction())) {
 				Log.i(TAG, "in onStartCommmand(), start " + TAG);
-				startForeground(NOTIFICATION_ID,
-						getCompatNotification());
+				startForeground(NOTIFICATION_ID, getCompatNotification());
 			}
-			msgHandler = new Handler() {
-				@Override
-				public void handleMessage(Message msg) {
-					super.handleMessage(msg);
-				}
-			};
 
-			mFilters = (ArrayList<Filter>) intent
-				.getSerializableExtra("filter_list");
+			mFilters = (ArrayList<Filter>) intent.getSerializableExtra("filter_list");
 			mSaveFiltered = intent.getExtras().getBoolean("save_option");
-			setupCanSocket();
-			mThread = new recvThread();
-			mThread.start();
+
+			mT0 = new logThread(can0, mSocket0);
+			mT1 = new logThread(can1, mSocket1);
+
+			mT0.start();
+			mT1.start();
 		}
 
 		return START_STICKY;
 	}
 
 	private void postOldData() {
+
 		Log.d(TAG, "in postOldData()");
 		bcIntent = new Intent(BROADCAST_ACTION);
 		Bundle b = new Bundle();
@@ -97,31 +110,8 @@ public class CandroidService extends Service {
 		sendBroadcast(bcIntent);
 	}
 
-	private void setupCanSocket() {
-		try {
-			mSocket = new CanSocketJ1939(CAN_INTERFACE);
-			mSocket.setPromisc();
-			mSocket.setTimestamp();
-			if (mSaveFiltered) {
-				mSocket.setJ1939Filter(mFilters);
-			}
-		} catch (IOException e) {
-			Log.e(TAG, "socket creation on " + CAN_INTERFACE + " failed");
-		}
-	}
-
-	private void closeCanSocket() {
-		if (mSocket != null) {
-			try {
-				mSocket.close();
-				mSocket = null;
-			} catch (IOException e) {
-				Log.e(TAG, "cannot close socket");
-			}
-		}
-	}
-
 	private void createFile() {
+
 		long unixtime = System.currentTimeMillis() / 1000L;
 		String timestamp = Long.toString(unixtime);
 		String filename = timestamp + ".log";
@@ -135,6 +125,7 @@ public class CandroidService extends Service {
 	}
 
 	private Notification getCompatNotification() {
+
 		Builder builder = new Builder(this);
 		builder.setSmallIcon(R.drawable.computer)
 				.setContentTitle("CANdroid logging messages ...")
@@ -145,34 +136,50 @@ public class CandroidService extends Service {
 				this, 0, notificationIntent, 0);
 		builder.setContentIntent(contentIntent);
 		Notification notification = builder.build();
+
 		return notification;
 	}
 
-	public class recvThread implements Runnable {
-		Thread recvThread;
+	public class logThread implements Runnable {
+
+		Thread logThread;
+
+		public String canInterface;
+		public CanSocketJ1939 socket;
+
+		public logThread(String canInterface, CanSocketJ1939 socket) {
+			this.canInterface = canInterface;
+			this.socket = socket;
+		}
 
 		public void start() {
-			if (recvThread == null) {
-				recvThread = new Thread(this);
-				recvThread.start();
+			if (logThread == null) {
+				logThread = new Thread(this);
+				logThread.start();
 			}
 		}
 
 		public void run() {
-			while (!recvThread.interrupted()) {
+			try {
+				socket = new CanSocketJ1939(canInterface);
+				socket.setPromisc();
+				socket.setTimestamp();
+			} catch (IOException e) {
+				Log.e(TAG, "socket creation on " + canInterface + " failed.");
+			}
+
+			while (!logThread.interrupted()) {
 				try {
-					if (mSocket.select(1) == 0) {
-						mMsg = mSocket.recvMsg();
+					if (socket.select(1) == 0) {
+						J1939Message msg = socket.recvMsg();
 						if (mOsw == null) {
 							createFile();
 						}
 						try {
-							mOsw.append(mMsg.toString() + "\n");
+							mOsw.append(msg.toString() + "\n");
 						} catch (Exception e) {
 							Log.e(TAG, "cannot append to file");
 						}
-					} else {
-						msgHandler.sendEmptyMessage(0);
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "cannot select on socket");
@@ -181,9 +188,10 @@ public class CandroidService extends Service {
 		}
 
 		public void stop() {
-			if (recvThread != null) {
-				recvThread.interrupt();
+			if (logThread != null) {
+				logThread.interrupt();
 			}
+			
 			try {
 				if (mOsw != null) {
 					mOsw.close();
@@ -194,7 +202,15 @@ public class CandroidService extends Service {
 			} catch (IOException e) {
 				Log.e(TAG, "cannot close fd");
 			}
-			closeCanSocket();
+
+			if (socket != null) {
+				try {
+					socket.close();
+					socket = null;
+				} catch (IOException e) {
+					Log.e(TAG, "cannot close socket");
+				}
+			}
 		}
 	}
 

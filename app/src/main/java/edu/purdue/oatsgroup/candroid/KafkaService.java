@@ -92,8 +92,7 @@ public class KafkaService extends Service {
 		if (mSocket0 == null && mSocket1 == null) {
 			if (FOREGROUND_START.equals(intent.getAction())) {
 				Log.i(TAG, "in onStartCommmand(), start " + TAG);
-				startForeground(NOTIFICATION_ID,
-						getCompatNotification());
+				startForeground(NOTIFICATION_ID, getCompatNotification());
 			}
 
 			setupKafkaProducer();
