@@ -189,8 +189,7 @@ public class KafkaService extends Service {
 						binaryEncoder.flush();
 						IOUtils.closeQuietly(stream);
 
-						mProducer.send(new ProducerRecord<>(topic, candroidKey,
-									stream.toByteArray()));
+						mProducer.send(new ProducerRecord<>(topic, candroidKey, stream.toByteArray()));
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "cannot select on socket");

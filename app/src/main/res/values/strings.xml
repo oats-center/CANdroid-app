@@ -2,5 +2,10 @@
     <string name="app_name">Candroid</string>
     <string name="view_old_logs">View Old Logs</string>
     <string name="add_filters">Add Filters</string>
+		<string name="new_filters">Adding new filters will stop current logging, do you wish to
+			continue?</string>
     <string name="stop">Stop</string>
+		<string name="stop_logging">Stop current logging and services?</string>
+		<string name="change_log_opt">Changing log options will stop current logging, do you wish to
+			contiune?</string>
 </resources>
